@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arxcs 個人シート</title>
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#111215">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Arxcs">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Plus+Jakarta+Sans:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#111215;--sub:#6b7079;--line:#e4e5e8;--card:#fff;--bg:#f5f5f2;--accent:#111215;--accent-ink:#fff;
+  --danger:#d93025;--warn:#c77700;--brand:#2f5bea;--locked:#eef0f3;--ok:#16a34a;
+  --s-interview1:#3b82f6;--s-interview2:#2563eb;--s-interview3:#1d4ed8;--s-a2:#8b5cf6;--s-dml:#a855f7;
+  --s-proposal:#ec4899;--s-proposalDate:#f97316;--s-participationDate:#eab308;--s-enrolled:#16a34a;--s-declined:#9ca3af;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:"Noto Sans JP",system-ui,sans-serif;color:var(--ink);background:var(--bg);font-size:14px;-webkit-font-smoothing:antialiased}
+button{font:inherit;cursor:pointer;color:inherit}
+button:disabled{cursor:not-allowed;opacity:.45}
+input,select,textarea{font:inherit;color:inherit}
+.brand-font{font-family:"Plus Jakarta Sans","Noto Sans JP",sans-serif}
+
+/* ---------- login ---------- */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0b0c0e;padding:20px}
+.login-card{background:#fff;border-radius:16px;padding:22px;width:100%;max-width:320px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.logo-row{display:flex;align-items:center;gap:10px;margin-bottom:18px}
+.logo-title{font-weight:800;font-size:16px;line-height:1.1}
+.logo-sub{font-size:10px;color:var(--sub);font-weight:700}
+.lbl{display:block;font-size:11px;font-weight:700;color:var(--sub);margin-bottom:5px}
+.inp{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;font-size:13px}
+.inp:focus{outline:2px solid var(--ink);outline-offset:-1px}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 14px;font-size:12px;font-weight:700;white-space:nowrap}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.danger{border-color:var(--danger);color:var(--danger)}
+.btn.danger.solid{background:var(--danger);color:#fff}
+.btn.sm{padding:4px 10px;font-size:11px}
+.note{font-size:11px;color:var(--sub);line-height:1.6}
+
+/* ---------- shell ---------- */
+.topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 20px;background:rgba(245,245,242,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.topbar-brand{display:flex;align-items:center;gap:8px}
+.app-title{font-weight:800;font-size:14px}
+.app-title span{font-weight:500;color:var(--sub)}
+.topbar-user{display:flex;align-items:center;gap:8px}
+.member-pill{background:var(--locked);font-weight:900;font-size:12px;padding:6px 12px;border-radius:999px}
+.nav-menu-btn{display:none;border:1px solid var(--line);background:#fff;border-radius:8px;padding:4px 10px;font-size:16px}
+.tab-nav{display:flex;gap:4px;padding:10px 20px 0;flex-wrap:wrap;border-bottom:1px solid var(--line);background:var(--bg)}
+.tab-link{border:none;background:none;padding:9px 14px;font-size:13px;font-weight:700;color:var(--sub);border-bottom:2px solid transparent;margin-bottom:-1px}
+.tab-link.active{color:var(--ink);border-bottom-color:var(--ink)}
+.tab-link:hover{color:var(--ink)}
+.app-content{padding:18px 20px 80px;max-width:1600px;margin:0 auto}
+.banner{font-size:12px;padding:8px 12px;border-radius:10px;margin-bottom:12px;background:#fff7e6;border:1px solid #f5d39b;color:#7a4b00}
+.banner.err{background:#fdecea;border-color:#f3b4ae;color:#8a1c12}
+.watermark{position:fixed;right:18px;bottom:10px;font-family:"Plus Jakarta Sans";font-weight:800;font-size:44px;color:rgba(0,0,0,.035);pointer-events:none;z-index:0}
+@media (max-width:760px){
+  .nav-menu-btn{display:block}
+  .tab-nav{display:none;flex-direction:column;padding:6px 12px}
+  .tab-nav.open{display:flex}
+  .tab-link{text-align:left;border-bottom:none;border-left:3px solid transparent}
+  .tab-link.active{border-left-color:var(--ink)}
+  .topbar{padding:10px 12px}.app-content{padding:14px 10px 80px}
+  .app-title span{display:none}
+}
+
+/* ---------- tables ---------- */
+.scrollx{overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:12px;max-height:calc(100vh - 230px)}
+table.t{border-collapse:separate;border-spacing:0;width:100%}
+table.t th{position:sticky;top:0;background:#fafafa;z-index:1;text-align:left;font-size:11px;color:var(--sub);font-weight:700;padding:7px 8px;white-space:nowrap;border-bottom:1px solid var(--line)}
+table.t td{padding:4px 5px;border-bottom:1px solid #f0f0f2;font-size:12px;vertical-align:middle}
+table.t tr:last-child td{border-bottom:none}
+.cell{width:100%;min-width:80px;padding:6px 8px;font-size:12px;border:1px solid var(--line);border-radius:6px;background:#fff}
+.cell:focus{outline:2px solid var(--ink);outline-offset:-1px}
+.cell[type=date]{min-width:128px}
+.cell.w-name{min-width:110px}.cell.w-uni{min-width:150px}.cell.w-s{min-width:84px}.cell.w-memo{min-width:150px}
+.num{color:var(--sub);font-size:11px;text-align:center}
+.empty-row td{padding:28px;text-align:center;color:var(--sub);font-size:12px}
+.dup-row td{background:#fff5f4}
+.badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;background:var(--locked);white-space:nowrap}
+.badge.dup{background:#fde2df;color:var(--danger);white-space:normal;min-width:90px;line-height:1.4;border-radius:8px}
+.badge.dup.self{background:#fff1d6;color:var(--warn)}
+
+/* toolbars */
+.toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:10px}
+.toolbar .grow{flex:1}
+.filter{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--sub);background:var(--card);border:1px solid var(--line);border-radius:999px;padding:4px 6px 4px 12px}
+.filter select,.filter input{border:none;background:transparent;font-size:12px;font-weight:700;padding:3px 4px;max-width:180px;color:var(--ink)}
+.filter select:focus,.filter input:focus{outline:none}
+.search{flex:1;min-width:220px;max-width:520px;padding:8px 14px;border:1px solid var(--line);border-radius:999px;background:#fff;font-size:13px}
+.count{font-size:11px;color:var(--sub);font-weight:700}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;background:#fff;padding:2px}
+.seg button{border:none;background:none;padding:5px 12px;border-radius:999px;font-size:12px;font-weight:700;color:var(--sub)}
+.seg button.active{background:var(--ink);color:#fff}
+.sortbar{display:inline-flex;align-items:center;gap:4px;flex-wrap:wrap;font-size:11px;color:var(--sub);font-weight:700}
+.sortbar button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:3px 10px;font-size:11px;font-weight:700;color:var(--sub)}
+.sortbar button.active{border-color:var(--ink);color:var(--ink)}
+.alert-strip{font-size:12px;background:#fff5f4;border:1px solid #f6c8c3;color:var(--danger);border-radius:10px;padding:8px 12px;margin-bottom:10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.alert-strip button{border:none;background:#fde2df;color:var(--danger);font-weight:700;font-size:11px;border-radius:999px;padding:2px 9px}
+
+.add-row-btn{width:100%;border:1px dashed var(--line);background:#fafafa;border-radius:8px;padding:9px;font-size:12px;font-weight:700;color:var(--sub)}
+.add-row-btn:hover{color:var(--ink);border-color:var(--ink)}
+.draft-row td{background:#f7f8ff}
+.fab{position:fixed;right:22px;bottom:22px;z-index:25;background:var(--ink);color:#fff;border:none;border-radius:999px;padding:12px 18px;font-weight:700;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+.dup-msg{display:block;font-size:11px;margin-top:4px;line-height:1.5}
+.dup-msg.ng{color:var(--danger);font-weight:700}
+.dup-msg.ok{color:var(--ok)}
+.dup-who{display:block;font-size:11px;color:var(--sub);line-height:1.6;white-space:normal}
+.dup-who b{color:var(--danger)}
+.import-box{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;max-width:640px}
+.progress{height:10px;background:#eceef2;border-radius:999px;overflow:hidden;margin:10px 0}
+.progress>div{height:100%;background:var(--brand);width:0}
+
+/* cards */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:12px}
+.lcard{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+.lcard.dup{border-color:#f3b4ae}
+.lcard-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.lcard-name{font-weight:900;font-size:15px}
+.lcard-furi{font-size:11px;color:var(--sub)}
+.lcard-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
+.cf{display:block}.cf>span{display:block;font-size:10px;font-weight:700;color:var(--sub);margin-bottom:3px}
+.cf .cell{min-width:0}
+.stage-badge{font-size:10px;font-weight:700;border-radius:999px;padding:2px 8px;background:var(--locked)}
+.stage-interview{background:#dbeafe;color:#1d4ed8}.stage-event{background:#fef3c7;color:#92400e}
+
+/* modal */
+.backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:40;display:flex;align-items:center;justify-content:center;padding:16px}
+.modal{background:#fff;border-radius:18px;padding:22px;width:100%;max-width:440px;max-height:90vh;overflow:auto}
+.modal h3{margin:0 0 14px;font-size:16px;font-weight:900}
+.modal .fields{display:grid;gap:10px}
+
+/* status */
+.pill{display:inline-block;font-size:10px;font-weight:700;border-radius:999px;padding:3px 9px;white-space:nowrap;background:var(--locked);color:var(--ink)}
+.pill.s-面談1回目{background:#dbeafe;color:#1e40af}.pill.s-面談2回目{background:#c7dbfe;color:#1e3a8a}.pill.s-面談3回目{background:#b4ccfc;color:#1e3a8a}
+.pill.s-①A2基準達成{background:#ede9fe;color:#5b21b6}.pill.s-②DML動画配布{background:#f3e8ff;color:#7e22ce}
+.pill.s-③提案{background:#fce7f3;color:#9d174d}.pill.s-④提案日{background:#ffedd5;color:#9a3412}.pill.s-⑤参加{background:#fef9c3;color:#854d0e}
+.pill.s-⑥入会{background:#dcfce7;color:#166534}.pill.s-⑦見送り{background:#f3f4f6;color:#6b7280}.pill.s-イベント{background:#fef3c7;color:#92400e}
+.profile .n{font-weight:900;font-size:13px}.profile .f{font-size:10px;color:var(--sub)}
+.profile .m{font-size:10px;color:var(--sub);margin-top:2px}
+.step-cell{position:relative}
+.step-cell.filled::before{content:"";position:absolute;left:2px;right:2px;bottom:2px;height:3px;border-radius:2px;background:var(--c)}
+.step-th{border-bottom:3px solid var(--c)!important}
+.stack{display:grid;gap:4px}.stack label{display:grid;grid-template-columns:40px 1fr;align-items:center;gap:4px;font-size:10px;color:var(--sub);font-weight:700;white-space:nowrap}
+.declined-cell .cell{background:#f3f4f6}
+tr.row-⑥入会 td{background:#f4fbf6}tr.row-⑦見送り td{background:#f8f8f8;color:#8a8f98}
+
+/* step input */
+.na-wrap{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.na-box{display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--c,#ddd);border-radius:12px;padding:5px 8px;background:#fff}
+.na-box.optional{border-style:dashed}
+.na-label{font-size:9px;font-weight:900;color:#fff;background:var(--c,#999);border-radius:4px;padding:1px 5px;letter-spacing:.05em}
+.na-step{font-weight:900;font-size:12px}
+.na-input{padding:4px 6px;font-size:12px;border:1px solid var(--line);border-radius:6px;max-width:150px}
+.na-confirm{background:var(--ink);color:#fff;border:none;border-radius:999px;padding:4px 12px;font-size:11px;font-weight:700}
+.na-back,.na-add{border:1px solid var(--line);background:#fff;border-radius:999px;padding:3px 9px;font-size:11px;font-weight:700;color:var(--sub)}
+.na-done{color:var(--ok);font-weight:900;font-size:12px}
+.na-history{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin-top:6px}
+.na-chip{font-size:10px;border-radius:999px;padding:2px 8px;background:color-mix(in srgb,var(--c) 14%,#fff);color:color-mix(in srgb,var(--c) 70%,#000)}
+.na-chip b{margin-right:4px}
+.na-arrow{color:var(--sub);font-size:10px}
+
+/* apo */
+.apo-stepper{display:inline-flex;align-items:center;gap:2px;border:1px solid var(--line);border-radius:999px;padding:2px;background:var(--apo-bg,#fff)}
+.apo-stepper button{width:22px;height:22px;border-radius:50%;border:none;background:rgba(255,255,255,.8);font-weight:900;font-size:13px;line-height:1}
+.apo-stepper span{min-width:18px;text-align:center;font-weight:900;font-size:12px}
+.apo-table td{text-align:center}
+
+/* event */
+.addform{display:flex;flex-wrap:wrap;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:10px}
+.addform b{font-size:12px}
+.addform select{padding:6px 10px;border:1px solid var(--line);border-radius:8px;font-size:12px;background:#fff;max-width:280px}
+.event-more td{border-top:none}
+
+/* overview */
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:4px 10px;font-size:11px;font-weight:700;color:var(--sub);display:inline-flex;gap:6px}
+.chip b{color:var(--ink)}
+.chip.active{background:var(--ink);color:#fff;border-color:var(--ink)}.chip.active b{color:#fff}
+tr.clickable{cursor:pointer}tr.clickable:hover td{background:#f7f7f9}
+
+/* dashboard */
+.dash-period{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+.dash-top{display:grid;grid-template-columns:minmax(240px,1fr) minmax(320px,1.6fr) minmax(240px,1fr);gap:12px;margin-bottom:12px}
+.dash-bottom{display:grid;grid-template-columns:1.4fr 1fr;gap:12px}
+@media (max-width:1100px){.dash-top,.dash-bottom{grid-template-columns:1fr}}
+.dcard{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;min-width:0}
+.dcard h3{margin:0 0 12px;font-size:13px;font-weight:900}
+.dsub{font-size:11px;color:var(--sub);font-weight:700;margin:14px 0 6px}
+.dsub.first{margin-top:0}
+.goal-wrap{display:flex;align-items:center;gap:14px}
+.ring{--pct:0;width:92px;height:92px;border-radius:50%;background:conic-gradient(var(--brand) calc(var(--pct)*1%),#eceef2 0);display:grid;place-items:center;flex:none}
+.ring span{width:72px;height:72px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:20px}
+.ring small,.dash small{font-size:.6em;margin-left:1px}
+.mini-list{display:grid;gap:4px}
+.mini-row{display:flex;justify-content:space-between;font-size:12px;padding:5px 8px;border-radius:8px;background:#fafafa}
+.mini-row.current{background:#eef2ff}
+.mini-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--c,#999);margin-right:6px}
+.funnel-row{display:grid;grid-template-columns:90px 1fr 32px;align-items:center;gap:8px;font-size:12px;margin-bottom:6px}
+.funnel-track{height:14px;background:#f1f2f4;border-radius:999px;overflow:hidden}
+.funnel-bar{height:100%;background:var(--brand);border-radius:999px}
+.funnel-num{text-align:right;font-weight:900}
+.conv-row{display:flex;align-items:center;flex-wrap:wrap;gap:4px}
+.conv-item{text-align:center;padding:6px 8px;background:#fafafa;border-radius:10px;min-width:62px}
+.conv-pct{font-weight:900;font-size:16px}.conv-label{font-size:10px;color:var(--sub);font-weight:700}.conv-n{font-size:10px;color:var(--sub)}
+.conv-arrow{color:var(--sub)}
+.stg-row{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.stg-item{background:#fafafa;border-radius:10px;padding:8px;font-size:10px;color:var(--sub);font-weight:700;display:flex;flex-direction:column;gap:2px}
+.stg-item b{font-size:16px;color:var(--ink)}.stg-item.warn b{color:var(--danger)}
+.lt{width:100%;border-collapse:collapse;font-size:11px}
+.lt th{text-align:left;color:var(--sub);font-weight:700;padding:4px;border-bottom:1px solid var(--line)}
+.lt td{padding:4px;border-bottom:1px solid #f3f3f5}.lt td.l{color:var(--sub)}.lt td.main{font-weight:900}.lt td.none{color:#b0b4bb}
+.na-list{display:grid;gap:4px;max-height:420px;overflow:auto}
+.na-row{display:grid;grid-template-columns:76px minmax(80px,1fr) auto minmax(0,1fr) 14px;align-items:center;gap:8px;padding:7px 10px;border-radius:10px;background:#fafafa;font-size:12px;cursor:pointer}
+.na-row:hover{background:#f0f1f4}
+.na-when{font-size:11px;font-weight:700;color:var(--sub)}.na-when.today{color:var(--brand)}.na-when.late{color:var(--danger)}
+.na-name{font-weight:900;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.na-meta{font-size:10px;color:var(--sub);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.go{color:var(--sub)}
+.dash-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}
+.dstat{background:#fafafa;border-radius:10px;padding:8px}.dstat .l{font-size:10px;color:var(--sub);font-weight:700}.dstat .v{font-size:20px;font-weight:900}
+.alist{display:grid;gap:4px;max-height:360px;overflow:auto}
+.arow{display:grid;grid-template-columns:minmax(70px,auto) 1fr 14px;gap:8px;align-items:center;padding:7px 10px;border-radius:10px;background:#fafafa;font-size:12px;cursor:pointer}
+.arow.warn{background:#fff8eb}.arow.dup{background:#fff1f0}
+.arow .n{font-weight:900}.arow .r{font-size:11px;color:var(--sub)}
+.arow.warn .r{color:var(--warn)}.arow.dup .r{color:var(--danger)}
+.dempty{font-size:12px;color:var(--sub);padding:14px;text-align:center}
+
+/* admin */
+.admin-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px}
+.admin-sub{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+textarea.inp{min-height:180px;font-size:12px;line-height:1.6}
+.mrow{display:grid;grid-template-columns:1fr auto auto;gap:6px;align-items:center;margin-bottom:6px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:24px;z-index:60;background:var(--ink);color:#fff;font-size:12px;font-weight:700;padding:10px 18px;border-radius:999px;box-shadow:0 8px 24px rgba(0,0,0,.25);max-width:90vw}
+.loading{min-height:60vh;display:grid;place-items:center;color:var(--sub);font-size:13px}
+</style>
+</head>
+<body>
+<div id="app"><div class="loading">読み込み中…</div></div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc as fdoc, collection as fcol, setDoc, updateDoc, deleteDoc, addDoc, getDoc, getDocsFromCache, onSnapshot as fsnap, query, where, serverTimestamp, Timestamp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { firebaseConfig } from "./config.js";
+/* ================== マスタ（初期値） ================== */
+const REGION_OPTIONS = ["北海道","東北","関東","中部","近畿","中国","四国","九州・沖縄","海外","未設定"];
+const DEFAULT_MASTERS = {
+  universities: [],
+  clubs: ["サッカー","野球","テニス","バスケ","バレー","ラグビー","バドミントン","アメリカンフットボール","卓球","陸上","柔道","水泳","ダンス","チアリーディング","ラクロス","ホッケー","スキー","レスリング","フェンシング","ソフトボール","ソサイチ","マーチングバンド","ボディビル","パルクール","空道","アメフト","駅伝","弓道","シンクロ","フットサル","ハンド"],
+  gradYears: ["22年卒","23年卒","24年卒","25年卒","26年卒","27年卒","28年卒","29年卒","30年卒","31年卒"],
+  routes: ["SNS（インスタ＆TikTok）","イベント","紹介","その他","実行委員会","リーダーズアカデミー","マガジン","講演会","取材アワード"],
+  events: [],
+  proposals: ["Arxcs","Arxcs→モノポリー","イベント","紹介"],
+  alert: { default: 10, contact: 10, byStatus: {} }
+};
+const ALERT_STATUSES = ["面談1回目","面談2回目","面談3回目","①A2基準達成","②DML動画配布","③提案","④提案日","⑤参加"];
+const YEAR_OPTIONS = [2024,2025,2026,2027,2028,2029,2030];
+const APO_MAX = 15;
+const TABS = [
+  {id:"dash",label:"ダッシュボード"},{id:"apo",label:"アポ目標"},{id:"lead",label:"見込み顧客"},
+  {id:"mtg",label:"IAA"},{id:"event",label:"イベント"},{id:"overview",label:"担当リスト"},{id:"all",label:"全体リスト"},{id:"admin",label:"管理",admin:true}
+];
+const STEPS = [
+  {field:"interview1",label:"面談1回目"},{field:"interview2",label:"面談2回目"},{field:"interview3",label:"面談3回目"},
+  {field:"a2",label:"①A2基準達成"},{field:"dml",label:"②DML動画配布"},{field:"proposal",label:"③提案",text:true},
+  {field:"proposalDate",label:"④提案日"},{field:"participationDate",label:"⑤参加日"},{field:"enrolled",label:"⑥入会"}
+];
+const STEP_BY = Object.fromEntries(STEPS.map(s=>[s.field,s]));
+const MAIN_FLOW = ["interview1","a2","dml","proposal","proposalDate","participationDate","enrolled"];
+const PROGRESS_OPTIONS = ["見込み","イベント","面談1回目","面談2回目","面談3回目","①A2基準達成","②DML動画配布","③提案","④提案日","⑤参加","⑥入会","⑦見送り"];
+
+/* ================== 状態 ================== */
+const LS = { get(k){try{return localStorage.getItem(k)}catch(e){return null}}, set(k,v){try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}} };
+const S = {
+  db:null, user:null, canWrite:true, isAdmin:false, dbState:"loading", stale:false,
+  members:null, candidates:[], apoAll:{}, masters:null,
+  me:null, uid:null, account:undefined, actingAs:null, inviteCode:null, invite:undefined, regBusy:false, accounts:[], invites:[], newInviteLink:null,
+  tab: LS.get("arxcs_tab") || "dash", navOpen:false,
+  draft:null, draftMode:null, busy:false, pendingDelete:null,
+  leadQuery:"", leadFilter:{}, leadSort:{}, leadView: window.innerWidth < 900 ? "card" : "list",
+  iaaSort:{}, iaaMode: LS.get("arxcs_iaa_mode")==="step" ? "step" : "list",
+  naStep:{}, naDraft:{}, eventFilter:"",
+  ovFilter: freshOv(), ovLimit:200, dashPeriod:{ym:"",week:0},
+  apoYear: new Date().getFullYear(),
+  adminSection:"dash", adminDashWho:"", adminOvFilter: freshOv(),
+  toast:null, deferRender:false
+};
+function freshOv(){ return {grade:"",route:"",region:"",university:"",progress:"",member:"",q:""}; }
+function M(){ return S.masters || DEFAULT_MASTERS; }
+function activeMembers(){ return (S.members||[]).filter(m=>m.active!==false); }
+function memberName(id){ if(id==="__admin__") return "管理者"; if(memberCache.src!==S.members){ memberCache={src:S.members,map:new Map((S.members||[]).map(m=>[m.id,m.name]))}; } return memberCache.map.get(id)||""; }
+
+/* ================== ユーティリティ ================== */
+const esc = s => String(s==null?"":s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function ymd(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+const todayStr = () => ymd(new Date());
+const isDate = v => /^\d{4}-\d{2}-\d{2}$/.test(v||"");
+const slash = v => isDate(v) ? v.replace(/-/g,"/") : (v||"");
+const md = v => isDate(v) ? Number(v.slice(5,7))+"/"+Number(v.slice(8,10)) : (v||"");
+function diffDays(a,b){ if(!isDate(a)||!isDate(b)) return null; return Math.round((new Date(b+"T00:00:00")-new Date(a+"T00:00:00"))/86400000); }
+const fullName = c => [c&&c.lastName||"", c&&c.firstName||""].filter(Boolean).join(" ");
+const fullFuri = c => [c&&c.lastNameFurigana||"", c&&c.firstNameFurigana||""].filter(Boolean).join(" ");
+const nameOf = c => fullName(c) || c.accountName || "";
+const nameKey = c => fullName(c).normalize("NFKC").replace(/[\s　]+/g,"").toLowerCase();
+const normHandle = s => (s||"").trim().replace(/^[@＠]+/,"").toLowerCase();
+function splitName(v){ const t=String(v||"").trim().replace(/　/g," ").replace(/\s+/g," "); if(!t) return ["",""]; const i=t.indexOf(" "); return i<0?[t,""]:[t.slice(0,i),t.slice(i+1)]; }
+let regionCache={m:null,map:null};
+function regionOf(u){ if(!u) return ""; const m=M(); if(regionCache.m!==m){ regionCache={m,map:new Map(m.universities.map(o=>[o.name,o.region||"未設定"]))}; } return regionCache.map.get(u)||"未設定"; }
+let memberCache={src:null,map:null};
+function uniNames(){ return M().universities.map(u=>u.name); }
+function alertDaysFor(st){ const a=M().alert||{}; return (a.byStatus&&a.byStatus[st]) || a.default || 10; }
+function alertContact(){ return (M().alert||{}).contact || 10; }
+function registeredDate(c){ return isDate(c.contactedAt) ? c.contactedAt : (c.createdAt||"").slice(0,10); }
+
+function computeStatus(c){
+  if(c.declined) return "⑦見送り"; if(c.enrolled) return "⑥入会"; if(c.participationDate) return "⑤参加";
+  if(c.proposalDate) return "④提案日"; if(c.proposal) return "③提案"; if(c.dml) return "②DML動画配布";
+  if(c.a2) return "①A2基準達成"; if(c.interview3) return "面談3回目"; if(c.interview2) return "面談2回目";
+  if(c.interview1) return "面談1回目"; return "";
+}
+const PROGRESS_DATE_FIELDS = ["interview1","interview2","interview3","a2","dml","proposalDate","participationDate","enrolled","declined"];
+function latestActionDate(c){ let l=""; PROGRESS_DATE_FIELDS.forEach(f=>{ if(c[f] && c[f]>l) l=c[f]; }); return l; }
+function computeStage(c){ if(c.proposal==="イベント") return "event"; if(c.interview1) return "interview"; if(c.initialActionDate) return "event"; return ["interview","event"].includes(c.legacySourceStage) ? c.legacySourceStage : "lead"; }
+const isIaa = c => !!c.interview1;
+const eventEntriesOf = c => Array.isArray(c.eventEntries) ? c.eventEntries : (c.eventName ? [c.eventName] : []);
+const isEventC = c => !!c.initialActionDate || c.proposal==="イベント" || eventEntriesOf(c).length>0;
+const progressOf = c => computeStatus(c) || (computeStage(c)==="event" ? "イベント" : "見込み");
+const mine = () => S.candidates.filter(c=>c.ownerUid===S.me);
+
+// 重複の判定：姓名がどちらも入っていて同じ人、または同じSNSアカウントの人
+function dupKeys(c){ const k=[]; if(c.lastName && c.firstName){ const n=nameKey(c); if(n) k.push("n:"+n); } const h=normHandle(c.accountName); if(h) k.push("h:"+h); return k; }
+let dupCache={src:null,info:null};
+function dupInfo(list){
+  if(dupCache.src===list) return dupCache.info;
+  const by={}; list.forEach(c=>dupKeys(c).forEach(k=>(by[k]=by[k]||[]).push(c)));
+  const info={};
+  Object.values(by).forEach(g=>{ if(g.length<2) return; g.forEach(c=>{ const i=info[c.id]||(info[c.id]={others:[]}); g.forEach(o=>{ if(o.id!==c.id && !i.others.includes(o)) i.others.push(o); }); }); });
+  list.forEach(c=>{ const i=info[c.id]; if(i){ i.cross=i.others.some(o=>o.ownerUid!==c.ownerUid); i.self=i.others.some(o=>o.ownerUid===c.ownerUid); } });
+  dupCache={src:list,info}; return info;
+}
+function findConflicts(draft, exceptId){
+  const ks=dupKeys(draft); if(!ks.length) return [];
+  return S.candidates.filter(c=>c.id!==exceptId && dupKeys(c).some(k=>ks.includes(k)));
+}
+const ownerOf = c => memberName(c.ownerUid) || c.member || "未割当";
+function ownersLabel(list){ return [...new Set(list.map(c=>c.ownerUid===S.me?"自分":ownerOf(c)))].join("・"); }
+function conflictDetail(hit){
+  return hit.slice(0,5).map(h=>`<span class="dup-who"><b>${esc(ownerOf(h))}</b>${h.ownerUid===S.me?"（自分）":""}：${esc(nameOf(h)||"（名前未入力）")}${h.accountName?" "+esc(h.accountName):""}${[h.university,h.gradYear].filter(Boolean).length?"・"+esc([h.university,h.gradYear].filter(Boolean).join("・")):""}・${esc(progressOf(h))}</span>`).join("")+(hit.length>5?`<span class="dup-who">ほか${hit.length-5}件</span>`:"");
+}
+
+function applySort(list, sort){
+  const s=sort||{}; const key=s.key||"registered"; const dir=s.key?s.dir:"asc"; const m=dir==="desc"?-1:1;
+  const val = c => key==="name" ? (fullFuri(c)||fullName(c)||c.accountName||"") : key==="status" ? PROGRESS_OPTIONS.indexOf(progressOf(c)) : key==="registered" ? (c.createdAt||"") : (c[key]||"");
+  return list.slice().sort((a,b)=>{ const x=val(a), y=val(b);
+    if(key!=="registered" && key!=="status"){ if(!x && y) return 1; if(x && !y) return -1; }
+    return (typeof x==="number" ? x-y : String(x).localeCompare(String(y),"ja"))*m; });
+}
+function sortBar(sort, opts, attr){
+  const s=sort||{}; const curKey=s.key||"registered", curDir=s.key?s.dir:"asc";
+  const b=(k,l)=>`<button type="button" ${attr}="${k}" class="${curKey===k?"active":""}">${l}${curKey===k?(curDir==="asc"?" ↑":" ↓"):""}</button>`;
+  return `<div class="sortbar">並び替え ${b("registered","登録順")}${opts.map(([k,l])=>b(k,l)).join("")}</div>`;
+}
+const datalist = (id, arr) => `<datalist id="${id}">${arr.map(v=>`<option value="${esc(v)}"></option>`).join("")}</datalist>`;
+function cell(id, field, value, type, cls, list){
+  const ro = S.canWrite ? "" : " readonly";
+  return `<input class="cell ${cls||""}" data-id="${id}" data-field="${field}" type="${type||"text"}"${list?` list="${list}"`:""} value="${esc(value)}"${ro}/>`;
+}
+const pill = st => st ? `<span class="pill s-${esc(st)}">${esc(st)}</span>` : `<span class="pill">—</span>`;
+function profileCell(c){
+  return `<div class="profile"><div class="n">${esc(fullName(c)||c.accountName||"（名前未入力）")}</div><div class="f">${esc(fullFuri(c))}</div><div class="m">${esc([c.university,c.gradYear,c.club].filter(Boolean).join("・"))}</div></div>`;
+}
+
+/* ================== データ保存 ================== */
+const queues = {};
+function enqueue(key, fn){ const p=(queues[key]||Promise.resolve()).then(fn); queues[key]=p.catch(()=>{}); return p; }
+function errText(e){ return e && (e.code||e.message) ? `（${e.code||e.message}）` : ""; }
+function writeFailed(e){
+  if(e && e.code==="permission-denied"){ toast("権限がないため保存できませんでした。管理者に確認してください",6000); return; }
+  toast("保存できませんでした"+errText(e), 6000);
+}
+function fieldPatch(cur, field, value){
+  const w={};
+  if(field==="name"){ [w.lastName,w.firstName]=splitName(value); }
+  else if(field==="furigana"){ [w.lastNameFurigana,w.firstNameFurigana]=splitName(value); }
+  else w[field]=value;
+  if(field==="enrolled" && value) w.declined="";
+  if(field==="declined" && value) w.enrolled="";
+  if(field==="proposal" && value==="イベント" && !cur.proposalDate) w.proposalDate=todayStr();
+  if(["interview1","initialActionDate","proposal"].includes(field) && cur.legacySourceStage) w.legacySourceStage="";
+  const after={...cur,...w}; w.stage=computeStage(after);
+  const same=(a,b)=>Array.isArray(a)||Array.isArray(b) ? JSON.stringify(a||[])===JSON.stringify(b||[]) : (a??"")===(b??"");
+  return Object.fromEntries(Object.entries(w).filter(([k,v])=>!same(cur[k],v)));
+}
+async function saveField(id, field, value){
+  const cur=S.candidates.find(c=>c.id===id); if(!cur || !S.db) return;
+  const patch=fieldPatch(cur, field, value);
+  if(!Object.keys(patch).length) return;
+  let warn="";
+  if(field==="name" || field==="accountName"){
+    const after={...cur,...patch};
+    const hit=findConflicts(after, id).filter(h=>!findConflicts(cur,id).includes(h));
+    if(hit.length) warn=`${ownersLabel(hit)}さんの登録と重複しています（保存しました）`;
+  }
+  patch.updatedAt=new Date().toISOString(); patch.updatedBy=S.me;
+  const idx=S.candidates.findIndex(c=>c.id===id); S.candidates=S.candidates.slice(); S.candidates[idx]={...cur,...patch}; if(S.absorbLocal) S.absorbLocal(id,{...cur,...patch});
+  try{ await enqueue("c/"+id, ()=>S.db.doc("candidates/"+id).update(patch)); if(warn) toast(warn,6000); }
+  catch(e){ writeFailed(e); }
+  render();
+}
+
+/* ================== 画面：ログイン ================== */
+const LOGO_SRC = "data:image/png;base64,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";
+const LOGO = s => `<img src="${LOGO_SRC}" width="${s}" height="${s}" alt="株式会社Arxcs" style="display:block;width:${s}px;height:${s}px;object-fit:contain"/>`;
+const APP_URL = location.origin + location.pathname;
+const inviteLink = code => APP_URL + "#invite-" + code;
+function gateCard(body){
+  return `<div class="login-wrap"><div class="login-card" style="max-width:380px">
+    <div class="logo-row">${LOGO(30)}<div><div class="logo-title brand-font">Arxcs</div><div class="logo-sub">個人シートアプリ・チーム共有</div></div></div>
+    ${body}</div></div>`;
+}
+// ログイン前の画面：招待リンクからの登録／自動ログイン
+function renderLogin(){
+  if(S.dbState==="config") return gateCard(`<div class="banner">まだFirebaseの設定が入っていません（config.js）。</div>`);
+  if(S.dbState==="authfail") return gateCard(`<div class="banner err">ログインの準備に失敗しました（${esc(S.authErr||"")}）。通信状態を確認して、ページを開き直してください。</div>`);
+  if(S.dbState!=="ready" || S.account===undefined || (S.account && S.members===null) || (S.isAdmin && S.members===null)) return gateCard(`<div class="note">読み込み中…</div>`);
+  if(S.inviteCode && !S.account){
+    if(S.invite===undefined) return gateCard(`<div class="note">招待を確認しています…</div>`);
+    if(!S.invite) return gateCard(`<div class="banner err">この招待リンクは無効です。管理者に新しい招待リンクを依頼してください。</div>`);
+    const forName=S.invite.memberName||"";
+    return gateCard(`<div style="font-weight:900;font-size:15px;margin-bottom:4px">チームに参加する</div>
+      <p class="note" style="margin:0 0 12px">${S.invite.memberId&&forName?`「${esc(forName)}」さんのシートで登録します。`:""}名前とメールアドレスを入力してください。次回からは、この端末で自動的にログインします。</p>
+      <form id="regForm"><label class="lbl" for="regName">名前</label><input class="inp" id="regName" autocomplete="name" value="${esc(S.invite.memberId?forName:"")}" placeholder="例：山田 太郎" required/>
+      <label class="lbl" for="regEmail" style="margin-top:10px">メールアドレス</label><input class="inp" id="regEmail" type="email" autocomplete="email" placeholder="例：yamada@example.com" required/>
+      <div style="margin-top:14px"><button class="btn primary" type="submit" ${S.regBusy?"disabled":""}>${S.regBusy?"登録中…":"登録してはじめる"}</button></div></form>`);
+  }
+  if(S.isAdmin){
+    const ms=activeMembers();
+    return gateCard(`<div style="font-weight:900;font-size:15px;margin-bottom:4px">管理者の初回設定</div>
+      <p class="note" style="margin:0 0 12px">この端末を、どの担当者のシートにつなげるか選んでください。次回からは自動でログインします。${ms.length?"":"<br>（メンバーがまだいない場合は、先に「データ移行」で元のデータを取り込みます）"}</p>
+      ${ms.length?`<label class="lbl" for="bindSel">自分の担当者</label><select class="inp" id="bindSel"><option value="">選択してください</option>${ms.map(m=>`<option value="${esc(m.id)}">${esc(m.name)}</option>`).join("")}</select>
+      <label class="lbl" for="bindEmail" style="margin-top:10px">メールアドレス（任意）</label><input class="inp" id="bindEmail" type="email" placeholder="例：yamada@example.com"/>
+      <div style="margin-top:14px"><button class="btn primary" id="bindBtn">このシートで開く</button></div>`:`<button class="btn primary" id="adminImportBtn">データ移行の画面を開く</button>`}`);
+  }
+  return gateCard(`<div style="font-weight:900;font-size:15px;margin-bottom:6px">招待リンクから参加してください</div>
+    <p class="note" style="margin:0">このアプリを使うには、管理者から届いた招待リンクを開いて、名前とメールアドレスを登録します。別の端末で使うときも、新しい招待リンクを管理者に依頼してください。</p>
+    <details style="margin-top:16px"><summary class="note" style="cursor:pointer">管理者の方はこちら</summary>
+      <label class="lbl" for="setupKey" style="margin-top:10px">管理者用の設定キー</label><input class="inp" id="setupKey" autocomplete="off"/>
+      <div style="margin-top:10px"><button class="btn" id="setupBtn">管理者として登録</button></div></details>`);
+}
+async function becomeAdmin(key){
+  try{ await S.db.doc("admins/"+S.uid).set({setupKey:key, at:new Date().toISOString()}); S.isAdmin=true; startData(); toast("管理者として登録しました"); render(true); }
+  catch(e){ toast("設定キーが正しくありません",5000); }
+}
+async function registerFromInvite(name, email){
+  if(S.regBusy) return; S.regBusy=true; render(true);
+  try{
+    const inv=S.invite; let memberId=inv.memberId;
+    if(!memberId){ memberId=S.uid; await S.db.doc("members/"+S.uid).set({name, active:true, order:1000+Math.floor(Date.now()/1000)%100000, joinedVia:S.inviteCode, joinedAt:new Date().toISOString()}); }
+    await S.db.doc("accounts/"+S.uid).set({memberId, name, email, invite:S.inviteCode, registeredAt:new Date().toISOString()});
+    S.me=memberId; S.inviteCode=null; try{ history.replaceState(null,"",location.pathname+location.search); }catch(e){ location.hash=""; }
+    startData();
+    toast(`${name}さん、ようこそ`);
+  }catch(e){ writeFailed(e); }
+  S.regBusy=false; render(true);
+}
+async function bindSelf(memberId, email){
+  try{ await S.db.doc("accounts/"+S.uid).set({memberId, name:memberName(memberId), email:email||"", invite:"", registeredAt:new Date().toISOString()}); S.me=memberId; render(true); }
+  catch(e){ writeFailed(e); }
+}
+
+/* ================== 画面：上部 ================== */
+function renderTop(){
+  const tabs=TABS.filter(t=>!t.admin || S.isAdmin);
+  return `<div class="topbar"><div class="topbar-brand">${LOGO(24)}<div class="app-title brand-font">Arxcs<span> 個人シートアプリ</span></div></div>
+    <div class="topbar-user"><span class="member-pill">${S.actingAs?"代理表示中：":"担当："}${esc(memberName(S.me))}</span>${S.actingAs?`<button class="btn" id="backToSelf">自分のシートに戻る</button>`:""}<button class="nav-menu-btn" id="navMenuBtn" aria-label="メニュー">☰</button></div></div>
+    <nav class="tab-nav${S.navOpen?" open":""}">${tabs.map(t=>`<button class="tab-link${S.tab===t.id?" active":""}" data-tab="${t.id}">${t.label}</button>`).join("")}</nav>`;
+}
+
+/* ================== 画面：アポ目標 ================== */
+function emptyGrid(){ return {w1:Array(12).fill(0),w2:Array(12).fill(0),w3:Array(12).fill(0),w4:Array(12).fill(0)}; }
+function gridOf(doc, year){ const g=doc && doc.years && doc.years[String(year)]; return g ? {...emptyGrid(),...g} : emptyGrid(); }
+function renderApo(){
+  const year=S.apoYear, g=gridOf(S.apoAll[S.me], year), rows=[g.w1,g.w2,g.w3,g.w4];
+  const months=[...Array(12)].map((_,i)=>i+1);
+  const head=`<tr><th>週</th>${months.map(m=>`<th style="text-align:center">${m}月</th>`).join("")}<th style="text-align:center">合計</th></tr>`;
+  const body=rows.map((r,wi)=>`<tr><td style="font-weight:700;color:var(--sub);white-space:nowrap">${wi+1}週目</td>${r.map((v,mi)=>{ const n=Number(v)||0; const tint=Math.min(30,Math.round(n/15*30));
+      return `<td><div class="apo-stepper" style="--apo-bg:color-mix(in srgb,var(--brand) ${tint}%,#fff)"><button data-apo-w="${wi}" data-apo-m="${mi}" data-apo-d="-1" aria-label="${mi+1}月${wi+1}週目を1減らす" ${n<=0||!S.canWrite?"disabled":""}>−</button><span>${n}</span><button data-apo-w="${wi}" data-apo-m="${mi}" data-apo-d="1" aria-label="${mi+1}月${wi+1}週目を1増やす" ${n>=APO_MAX||!S.canWrite?"disabled":""}>＋</button></div></td>`; }).join("")}<td style="font-weight:900">${r.reduce((a,b)=>a+(Number(b)||0),0)}</td></tr>`).join("");
+  const col=months.map((_,mi)=>`<td style="font-weight:900">${rows.reduce((a,r)=>a+(Number(r[mi])||0),0)}</td>`).join("");
+  const grand=rows.reduce((a,r)=>a+r.reduce((x,y)=>x+(Number(y)||0),0),0);
+  return `<div class="toolbar"><div class="grow note">週ごとのアポ（面談1回目）の目標件数を設定します。ダッシュボードの達成率に使われます。</div>
+    <label class="filter">対象年<select id="apoYear">${YEAR_OPTIONS.map(y=>`<option value="${y}"${y===year?" selected":""}>${y}年</option>`).join("")}</select></label></div>
+    <div class="scrollx"><table class="t apo-table">${head}${body}<tr><td style="font-weight:900">月合計</td>${col}<td style="font-weight:900">${grand}</td></tr></table></div>`;
+}
+async function apoStep(w, m, d){
+  const prevDoc=S.apoAll[S.me]||{}; const g=gridOf(prevDoc, S.apoYear); const wk="w"+(w+1);
+  const nw=g[wk].slice(); nw[m]=Math.min(APO_MAX, Math.max(0,(Number(nw[m])||0)+d));
+  const nextDoc={...prevDoc, years:{...(prevDoc.years||{}), [String(S.apoYear)]:{...g,[wk]:nw}}, memberId:S.me};
+  S.apoAll={...S.apoAll,[S.me]:nextDoc}; render(true);
+  try{ await enqueue("apo/"+S.me, ()=>S.db.doc("apoGoals/"+S.me).set(nextDoc)); }
+  catch(e){ writeFailed(e); }
+}
+
+/* ================== 画面：見込み顧客 ================== */
+const LEAD_FILTERS=[["university","大学",()=>uniNames()],["gradYear","学年",()=>M().gradYears],["club","部活",()=>M().clubs],["route","ルート",()=>M().routes]];
+const LEAD_SEARCH=["lastName","firstName","lastNameFurigana","firstNameFurigana","university","gradYear","club","route","accountName","memo"];
+const searchText = c => LEAD_SEARCH.map(f=>c[f]||"").join("").toLowerCase();
+const words = q => (q||"").trim().toLowerCase().split(/\s+/).filter(Boolean);
+function wordMatch(w, t){ if(t.includes(w)) return true; const n=w.length, r=Array(n+1).fill(false); r[0]=true;
+  for(let e=2;e<=n;e++) for(let s=0;s<=e-2;s++){ if(r[s] && t.includes(w.slice(s,e))){ r[e]=true; break; } } return r[n]; }
+const wordsMatch = (ws,t) => ws.every(w=>wordMatch(w,t));
+function freshDraft(){ return {name:"",furigana:"",university:"",gradYear:"",club:"",route:"",accountName:"",interview1:"",initialActionDate:"",memo:""}; }
+function draftCheck(){
+  const d=S.draft; if(!d) return {blocked:true,html:""};
+  const [ln,fn]=splitName(d.name);
+  if(!ln && !normHandle(d.accountName)) return {blocked:true, html:`<span class="dup-msg">氏名かアカウント名を入力すると、他の人の登録と重複していないか確認します</span>`};
+  const hit=findConflicts({lastName:ln,firstName:fn,accountName:d.accountName});
+  if(hit.length) return {blocked:false, html:`<span class="dup-msg ng">⚠ ${esc(ownersLabel(hit))}さんの登録と重複しています（このまま登録できます）</span>${conflictDetail(hit)}`};
+  return {blocked:false, html:`<span class="dup-msg ok">✓ 重複はありません</span>`};
+}
+function dInput(k, ph, type){ const v=S.draft[k]||""; return type==="date" ? `<input class="cell" data-draft="${k}" type="date" value="${esc(v)}"/>` : `<input class="cell ${k==="memo"?"w-memo":k==="university"?"w-uni":"w-name"}" data-draft="${k}" type="text" value="${esc(v)}" placeholder="${esc(ph||"")}"/>`; }
+function dList(k, list, ph){ return `<input class="cell ${k==="university"?"w-uni":"w-s"}" data-draft="${k}" list="${list}" type="text" value="${esc(S.draft[k]||"")}" placeholder="${ph}"/>`; }
+function renderDraftRow(){
+  const ck=draftCheck(), dis=ck.blocked||S.busy;
+  return `<tr class="draft-row"><td class="num">新</td>
+    <td>${dInput("name","例：山田 太郎")}</td><td>${dInput("furigana","例：やまだ たろう")}</td>
+    <td>${dList("university","uniList","大学を検索")}</td><td>${dList("gradYear","gyList","選択")}</td><td>${dList("club","clubList","選択")}</td><td>${dList("route","routeList","選択")}</td>
+    <td>${dInput("accountName","例：@username")}</td><td>${dInput("interview1","","date")}</td><td>${dInput("initialActionDate","","date")}</td><td>${dInput("memo","気になったことがあれば")}</td>
+    <td colspan="2"><div style="display:flex;gap:4px"><button class="btn primary sm" id="submitLead" ${dis?"disabled":""}>${S.busy?"…":"登録"}</button><button class="btn sm" data-draft-close>✕</button></div></td></tr>
+    <tr class="draft-row"><td></td><td colspan="12" id="dupHolder" style="padding:2px 8px 10px">${ck.html}</td></tr>`;
+}
+function renderLeadModal(){
+  if(S.draftMode!=="modal" || !S.draft) return "";
+  const ck=draftCheck(), dis=ck.blocked||S.busy;
+  const f=(l,h)=>`<div><label class="lbl">${l}</label>${h}</div>`;
+  return `<div class="backdrop" data-backdrop><div class="modal"><h3>新規見込み顧客</h3><div class="fields">
+    ${f("氏名（姓と名はスペースで区切る）",dInput("name","例：山田 太郎"))}${f("ふりがな",dInput("furigana","例：やまだ たろう"))}
+    ${f("大学",dList("university","uniList","大学を検索"))}${f("学年",dList("gradYear","gyList","選択"))}${f("部活",dList("club","clubList","選択"))}${f("ルート",dList("route","routeList","選択"))}
+    ${f("アカウント名",dInput("accountName","例：@username"))}${f("IAA（面談1回目）",dInput("interview1","","date"))}${f("イベント（初回アクション日）",dInput("initialActionDate","","date"))}
+    ${f("メモ",`<textarea class="inp" data-draft="memo" rows="3" style="min-height:70px" placeholder="気になったことがあれば">${esc(S.draft.memo||"")}</textarea>`)}
+    </div><div id="dupHolder" style="margin:10px 0">${ck.html}</div>
+    <div style="display:flex;justify-content:flex-end;gap:8px"><button class="btn" data-draft-close>キャンセル</button><button class="btn primary" id="submitLead" ${dis?"disabled":""}>${S.busy?"…":"登録"}</button></div></div></div>`;
+}
+function delCell(c){
+  if(!S.canWrite) return "";
+  if(S.pendingDelete===c.id) return `<div style="display:flex;flex-direction:column;align-items:center;gap:3px"><span style="font-size:10px;font-weight:700;color:var(--danger)">本当に削除？</span><div style="display:flex;gap:3px"><button class="btn danger solid sm" data-del-yes="${c.id}">はい</button><button class="btn sm" data-del-no>やめる</button></div></div>`;
+  return `<button class="btn danger sm" data-del="${c.id}">削除</button>`;
+}
+function dupBadge(info, id){
+  const d=info[id]; if(!d) return "";
+  const others=d.others.filter(o=>o.ownerUid!==S.me);
+  const tip=d.others.map(o=>`${ownerOf(o)}：${nameOf(o)}${o.university?"・"+o.university:""}`).join("\n");
+  if(others.length) return `<span class="badge dup" title="${esc(tip)}">重複：${esc(ownersLabel(others))}</span>`;
+  return `<span class="badge dup self" title="${esc(tip)}">自分の一覧内で重複</span>`;
+}
+function renderLead(){
+  const info=dupInfo(S.candidates);
+  const base=mine();
+  const f=S.leadFilter||{};
+  const list=applySort(base.filter(c=>LEAD_FILTERS.every(([k])=>!f[k]||c[k]===f[k])), S.leadSort);
+  const ws=words(S.leadQuery); const hidden=c=>ws.length && !wordsMatch(ws, searchText(c));
+  const hit=list.filter(c=>!hidden(c)).length;
+  const filters=LEAD_FILTERS.map(([k,l,master])=>{ const known=new Set(master()); const extra=[...new Set(base.map(c=>c[k]).filter(v=>v&&!known.has(v)))].sort((a,b)=>a.localeCompare(b,"ja"));
+    return `<label class="filter">${l}<select data-lead-filter="${k}"><option value="">すべて</option>${[...master(),...extra].map(o=>`<option value="${esc(o)}"${o===f[k]?" selected":""}>${esc(o)}</option>`).join("")}</select></label>`; }).join("");
+  const anyF=LEAD_FILTERS.some(([k])=>f[k]);
+  const dups=list.filter(c=>info[c.id]);
+  const STAGE={lead:"見込み",interview:"IAA",event:"イベント"};
+  let main;
+  if(S.leadView==="card"){
+    main = list.length ? `<div class="cards">${list.map(c=>`<div class="lcard${info[c.id]?" dup":""}" data-search="${esc(searchText(c))}"${hidden(c)?' style="display:none"':""}>
+      <div class="lcard-head"><div><div class="lcard-name">${esc(nameOf(c)||"（名前未入力）")}</div><div class="lcard-furi">${esc(fullFuri(c))}</div></div><span class="stage-badge stage-${computeStage(c)}">${STAGE[computeStage(c)]}</span></div>
+      ${dupBadge(info,c.id)}
+      <label class="cf"><span>氏名（姓と名はスペースで区切る）</span>${cell(c.id,"name",fullName(c),"text","")}</label>
+      <div class="lcard-grid">
+        <label class="cf"><span>ふりがな</span>${cell(c.id,"furigana",fullFuri(c))}</label><label class="cf"><span>アカウント名</span>${cell(c.id,"accountName",c.accountName)}</label>
+        <label class="cf"><span>大学</span>${cell(c.id,"university",c.university,"text","","uniList")}</label><label class="cf"><span>学年</span>${cell(c.id,"gradYear",c.gradYear,"text","","gyList")}</label>
+        <label class="cf"><span>部活</span>${cell(c.id,"club",c.club,"text","","clubList")}</label><label class="cf"><span>ルート</span>${cell(c.id,"route",c.route,"text","","routeList")}</label>
+        <label class="cf"><span>IAA（面談1回目）</span>${cell(c.id,"interview1",c.interview1,"date")}</label><label class="cf"><span>イベント</span>${cell(c.id,"initialActionDate",c.initialActionDate,"date")}</label>
+      </div><label class="cf"><span>メモ</span>${cell(c.id,"memo",c.memo)}</label>
+      <div style="margin-top:8px;text-align:right">${delCell(c)}</div></div>`).join("")}</div>`
+      : `<div class="dempty">見込み顧客はまだいません。ゆっくり登録していきましょう。</div>`;
+  } else {
+    const rows=list.map((c,i)=>`<tr class="${info[c.id]?"dup-row":""}" data-search="${esc(searchText(c))}"${hidden(c)?' style="display:none"':""}>
+      <td class="num">${i+1}</td><td>${cell(c.id,"name",fullName(c),"text","w-name")}</td><td>${cell(c.id,"furigana",fullFuri(c),"text","w-name")}</td>
+      <td>${cell(c.id,"university",c.university,"text","w-uni","uniList")}</td><td>${cell(c.id,"gradYear",c.gradYear,"text","w-s","gyList")}</td>
+      <td>${cell(c.id,"club",c.club,"text","w-s","clubList")}</td><td>${cell(c.id,"route",c.route,"text","w-s","routeList")}</td>
+      <td>${cell(c.id,"accountName",c.accountName,"text","w-name")}</td><td>${cell(c.id,"interview1",c.interview1,"date")}</td><td>${cell(c.id,"initialActionDate",c.initialActionDate,"date")}</td>
+      <td>${cell(c.id,"memo",c.memo,"text","w-memo")}</td><td>${dupBadge(info,c.id)}</td><td style="text-align:center">${delCell(c)}</td></tr>`).join("");
+    const noHit=`<tr id="noHit" class="empty-row"${ws.length&&list.length&&!hit?"":' style="display:none"'}><td colspan="13">検索条件に一致する見込み顧客がいません。</td></tr>`;
+    const empty=(!list.length && S.draftMode!=="row") ? `<tr class="empty-row"><td colspan="13">見込み顧客はまだいません。ゆっくり登録していきましょう。</td></tr>` : "";
+    const addRow=(!S.draftMode && S.canWrite) ? `<tr><td colspan="13"><button class="add-row-btn" id="addRowBtn">＋ 行を追加</button></td></tr>` : "";
+    main=`<div class="scrollx lead-table"><table class="t"><tr>${["No","氏名","ふりがな","大学","学年","部活","ルート","アカウント名","IAA","イベント","メモ","重複","削除"].map(h=>`<th>${h}</th>`).join("")}</tr>${addRow}${S.draftMode==="row"?renderDraftRow():""}${rows}${noHit}${empty}</table></div>`;
+  }
+  return datalist("uniList",uniNames())+datalist("gyList",M().gradYears)+datalist("clubList",M().clubs)+datalist("routeList",M().routes)+
+    `<div class="toolbar"><input id="leadSearch" class="search" value="${esc(S.leadQuery)}" placeholder="フリーワード検索（名前・大学・部活・ルート・メモなど）"/><span class="count" id="leadCount">${ws.length?`${hit}件ヒット / 全${list.length}件`:`全${list.length}件`}</span></div>
+    <div class="toolbar">${filters}${anyF?`<button class="btn sm" data-lead-filter-clear>条件をクリア</button>`:""}</div>
+    <div class="toolbar"><div class="grow">${sortBar(S.leadSort,[["name","名前"],["university","大学"],["gradYear","年卒"],["club","部活"],["route","ルート"]],"data-lead-sort")}</div>
+      <div class="seg"><button data-lead-view="list" class="${S.leadView!=="card"?"active":""}">☰ リスト</button><button data-lead-view="card" class="${S.leadView==="card"?"active":""}">▦ カード</button></div></div>
+    ${dups.length?`<div class="alert-strip">⚠ 他の登録と重複している見込み顧客が${dups.length}件あります：${dups.slice(0,12).map(c=>`<button data-dup-search="${esc(fullName(c)||c.accountName||"")}">${esc(nameOf(c))}</button>`).join("")}${dups.length>12?`<span>ほか${dups.length-12}件（一覧の「重複」列で確認できます）</span>`:""}</div>`:""}
+    ${main}
+    ${(!S.draftMode && S.canWrite)?`<button class="fab" id="addFormBtn">✎ 新規入力（フォーム）</button>`:""}
+    ${renderLeadModal()}`;
+}
+async function submitLead(){
+  const d=S.draft; if(!d || S.busy) return;
+  if(draftCheck().blocked){ refreshDup(); return; }
+  const [ln,fn]=splitName(d.name), [lf,ff]=splitName(d.furigana);
+  const data={ ownerUid:S.me, member:memberName(S.me),
+    lastName:ln, firstName:fn, lastNameFurigana:lf, firstNameFurigana:ff,
+    university:(d.university||"").trim(), gradYear:(d.gradYear||"").trim(), club:(d.club||"").trim(), route:(d.route||"").trim(), accountName:(d.accountName||"").trim(),
+    interview1:d.interview1||"", interview2:"", interview3:"", a2:"", dml:"", proposal:"", proposalDate:"", participationDate:"", enrolled:"", declined:"",
+    memo:d.memo||"", minutes:"", eventEntries:[], initialActionDate:d.initialActionDate||"",
+    contactedAt:todayStr(), createdAt:new Date().toISOString(), updatedAt:new Date().toISOString(), updatedBy:S.me };
+  data.stage=computeStage(data);
+  S.busy=true; render(true);
+  try{ await S.db.collection("candidates").add(data); S.draft=null; S.draftMode=null; toast(`${nameOf(data)} さんを登録しました`); }
+  catch(e){ writeFailed(e); }
+  S.busy=false; render(true);
+}
+function refreshDup(){
+  const h=document.getElementById("dupHolder"), b=document.getElementById("submitLead"); if(!h) return;
+  const ck=draftCheck(); h.innerHTML=ck.html; if(b) b.disabled=ck.blocked||S.busy;
+}
+
+/* ふりがな自動入力：氏名欄の「かな」のうちに打った部分を、ふりがな欄にそのまま映す */
+const hira = s => (s||"").replace(/[ァ-ヶ]/g, ch=>String.fromCharCode(ch.charCodeAt(0)-0x60));
+function kanaOrNull(s){ if(/^[ぁ-んー\s　]*$/.test(s||"")) return s; if(/^[ァ-ヶー\s　]*$/.test(s||"")) return hira(s); return null; }
+function bindFurigana(nameEl, furiEl, onUpdate){
+  if(!nameEl || !furiEl) return;
+  let cName=nameEl.value||"", cFuri=furiEl.value||"", last=nameEl.value||"", manual=false, prog=false;
+  furiEl.addEventListener("input",()=>{ if(!prog) manual=true; });
+  const setF=v=>{ prog=true; furiEl.value=v; prog=false; onUpdate(v); };
+  nameEl.addEventListener("input",()=>{
+    const v=nameEl.value, prev=last; last=v;
+    const whole=kanaOrNull(v);
+    if(whole!==null){ const grew=v.startsWith(cName); cName=""; cFuri=""; if(!grew) manual=false; if(!manual) setF(whole); return; }
+    if(prev.length && prev.startsWith(v) && v.length<prev.length){ cName=v; cFuri=""; manual=false; setF(""); return; }
+    const grew=v.startsWith(cName), suf=grew?v.slice(cName.length):v, k=kanaOrNull(suf);
+    if(k===null){ cName=v; if(grew) cFuri=furiEl.value; else { cFuri=""; manual=false; setF(""); } return; }
+    if(!grew) manual=false; if(manual) return; setF((grew?cFuri:"")+k);
+  });
+}
+
+/* ================== 画面：IAA ================== */
+const STEP_LIST_FIELDS=["interview1","interview2","interview3","a2","dml","proposal","proposalDate","participationDate","enrolled"];
+function renderMtgList(list){
+  const rows=list.map((c,i)=>{ const st=computeStatus(c);
+    return `<tr class="row-${esc(st)}" data-row="${c.id}"><td class="num">${i+1}</td><td>${profileCell(c)}</td><td>${pill(st)}<div class="profile"><div class="m">最新 ${slash(latestActionDate(c))||"—"}</div></div></td>
+      ${STEP_LIST_FIELDS.map(f=>`<td class="step-cell${c[f]?" filled":""}" style="--c:var(--s-${f})">${f==="proposal"?cell(c.id,f,c[f],"text","w-s","propList"):cell(c.id,f,c[f],"date")}</td>`).join("")}
+      <td class="declined-cell">${cell(c.id,"declined",c.declined,"date")}</td>
+      <td><div class="stack"><label>メモ${cell(c.id,"memo",c.memo,"text","w-memo")}</label><label>議事録${cell(c.id,"minutes",c.minutes,"text","w-memo")}</label></div></td></tr>`; }).join("")
+    || `<tr class="empty-row"><td colspan="14">面談中の候補者はいません。見込み顧客の「IAA」列に面談1回目の日付を入れると、ここに表示されます。</td></tr>`;
+  const H=["No","名前","進捗",...STEP_LIST_FIELDS.map(f=>STEP_BY[f].label),"⑦見送り","メモ / 議事録"];
+  return `<div class="scrollx"><table class="t"><tr>${H.map((h,i)=>{ const f=STEP_LIST_FIELDS[i-3]; return `<th${f?` class="step-th" style="--c:var(--s-${f})"`:""}>${h}</th>`; }).join("")}</tr>${rows}</table></div>`;
+}
+function optionalInterviews(c){ const o=[]; if(c.interview1&&!c.interview2) o.push("interview2"); if(c.interview2&&!c.interview3) o.push("interview3"); return o; }
+function nextMainField(c){ let l=-1; MAIN_FLOW.forEach((f,i)=>{ if(c[f]) l=i; }); return MAIN_FLOW[l+1]||null; }
+function lastConfirmed(c){
+  let lm=null; MAIN_FLOW.forEach(f=>{ if(c[f]) lm=f; });
+  const lo=c.interview3?"interview3":(c.interview2?"interview2":null);
+  if(!lo) return lm; if(!lm||lm==="interview1") return lo;
+  const dOf=f=>STEP_BY[f].text?(c.proposalDate||c.dml||c.a2||c.interview1||""):c[f];
+  return c[lo]>dOf(lm)?lo:lm;
+}
+function renderNA(c){
+  if(c.declined) return `<span class="pill s-⑦見送り">⑦見送り済み</span>`;
+  const main=nextMainField(c), opt=optionalInterviews(c), choices=[...(main?[main]:[]),...opt];
+  const sel=S.naStep[c.id], field=choices.includes(sel)?sel:(main||null), last=lastConfirmed(c);
+  const back=last&&S.canWrite?`<button class="na-back" data-na-back="${c.id}" title="${esc(STEP_BY[last].label)}を取り消す">↶ 1つ戻す</button>`:"";
+  const adds=S.canWrite?opt.filter(f=>f!==field).map(f=>`<button class="na-add" data-na-pick="${c.id}" data-na-field-pick="${f}">＋ ${STEP_BY[f].label}</button>`).join(""):"";
+  if(!field) return `<div class="na-wrap"><span class="na-done">✓ ⑥入会まで完了</span>${back}${adds}</div>`;
+  const st=STEP_BY[field], dr=S.naDraft[c.id], isOpt=field!==main;
+  const inp=st.text?`<input class="na-input" data-na-input="${c.id}" list="propList" value="${esc(dr||"")}" placeholder="提案内容を選択"/>`:`<input class="na-input" data-na-input="${c.id}" type="date" value="${esc(dr||todayStr())}"/>`;
+  return `<div class="na-wrap"><div class="na-box${isOpt?" optional":""}" style="--c:var(--s-${field})"><span class="na-label">${isOpt?"追加":"NEXT"}</span><span class="na-step">${st.label}</span>${inp}
+    ${S.canWrite?`<button class="na-confirm" data-na-confirm="${c.id}" data-na-field="${field}">確定</button>`:""}
+    ${isOpt?`<button class="na-back" data-na-pick="${c.id}" data-na-field-pick="${main||""}">やめる</button>`:back}</div>${adds}</div>`;
+}
+function renderHistory(c){
+  const done=STEPS.filter(s=>c[s.field]);
+  if(!done.length) return `<span class="note">まだ確定したステップはありません</span>`;
+  return done.map(s=>`<span class="na-chip" style="--c:var(--s-${s.field})"><b>${s.label}</b>${esc(md(c[s.field]))}</span>`).join(`<span class="na-arrow">›</span>`);
+}
+function renderMtgStep(list){
+  const rows=list.map((c,i)=>{ const st=computeStatus(c);
+    return `<tr class="row-${esc(st)}" data-row="${c.id}"><td class="num">${i+1}</td><td>${profileCell(c)}</td><td>${pill(st)}<div class="profile"><div class="m">最新 ${slash(latestActionDate(c))||"—"}</div></div></td>
+    <td style="min-width:380px">${renderNA(c)}<div class="na-history">${renderHistory(c)}</div></td>
+    <td class="declined-cell">${cell(c.id,"declined",c.declined,"date")}</td>
+    <td><div class="stack"><label>メモ${cell(c.id,"memo",c.memo,"text","w-memo")}</label><label>議事録${cell(c.id,"minutes",c.minutes,"text","w-memo")}</label></div></td></tr>`; }).join("")
+    || `<tr class="empty-row"><td colspan="6">面談中の候補者はいません</td></tr>`;
+  return `<div class="scrollx"><table class="t"><tr>${["No","名前","進捗","ネクストアクション","⑦見送り","メモ / 議事録"].map(h=>`<th>${h}</th>`).join("")}</tr>${rows}</table></div>`;
+}
+function renderMtg(){
+  const list=applySort(mine().filter(isIaa), S.iaaSort);
+  return datalist("propList",M().proposals)+
+    `<div class="toolbar"><div class="seg"><button data-iaa-mode="list" class="${S.iaaMode==="list"?"active":""}" title="面談1回目〜⑥入会の列に日付を直接入力">一覧入力</button><button data-iaa-mode="step" class="${S.iaaMode==="step"?"active":""}" title="次のステップに日付を打って確定すると次へ進む">ステップ入力</button></div>
+    <div class="grow"></div>${sortBar(S.iaaSort,[["name","名前"],["interview1","面談日"],["gradYear","年卒"],["status","ステータス"]],"data-iaa-sort")}</div>`+
+    (S.iaaMode==="step"?renderMtgStep(list):renderMtgList(list));
+}
+
+/* ================== 画面：イベント ================== */
+function renderEvent(){
+  const EV=M().events;
+  const people=applySort(mine().filter(isEventC), S.iaaSort), filter=S.eventFilter;
+  const rd=[]; people.forEach(c=>{ const e=eventEntriesOf(c), l=e.length?e:[""]; l.forEach((n,i)=>{ if(filter&&n!==filter) return; rd.push({c,n,i,count:l.length}); }); });
+  const t=v=>`<td>${v?esc(v):'<span style="color:var(--sub)">—</span>'}</td>`;
+  const sel=(c,i,v)=>{ let o=`<option value="">イベントを選択</option>`+EV.map(e=>`<option value="${esc(e)}"${e===v?" selected":""}>${esc(e)}</option>`).join(""); if(v&&!EV.includes(v)) o+=`<option value="${esc(v)}" selected>${esc(v)}</option>`;
+    return `<select class="cell" data-ev="${c.id}" data-ev-i="${i}" ${S.canWrite?"":"disabled"}>${o}</select>`; };
+  const rows=rd.map((r,i)=>{ const c=r.c; return `<tr class="${r.i?"event-more":""}"><td class="num">${i+1}</td>${t(fullName(c))}${t(fullFuri(c))}${t(c.university)}${t(c.gradYear)}${t(c.club)}${t(c.route)}${t(c.accountName)}${t(slash(c.initialActionDate))}
+    <td style="min-width:200px">${sel(c,r.i,r.n)}</td><td style="white-space:nowrap">${S.canWrite?(r.i===r.count-1?`<button class="btn sm" data-ev-add="${c.id}">＋ 参加を追加</button> `:"")+((r.n||r.count>1)?`<button class="btn sm" data-ev-rm="${c.id}" data-ev-i="${r.i}" title="この参加を削除">✕</button>`:""):""}</td></tr>`; }).join("")
+    || `<tr class="empty-row"><td colspan="11">${filter?"このイベントの参加者はまだいません。":"イベント参加者はまだいません。見込み顧客の「イベント」列に日付を入れると、ここに表示されます。"}</td></tr>`;
+  const total=rd.filter(r=>r.n).length;
+  const mineNamed=mine().filter(c=>fullName(c)).sort((a,b)=>(fullFuri(a)||fullName(a)).localeCompare(fullFuri(b)||fullName(b),"ja"));
+  return (S.canWrite?`<div class="addform"><b>参加を登録</b><select id="evPerson"><option value="">名前を選択</option>${mineNamed.map(c=>`<option value="${c.id}">${esc(fullName(c))}（${esc([c.university,c.gradYear].filter(Boolean).join("・"))}）</option>`).join("")}</select>
+    <select id="evName"><option value="">イベントを選択</option>${EV.map(e=>`<option value="${esc(e)}"${e===filter?" selected":""}>${esc(e)}</option>`).join("")}</select><button class="btn primary" id="evAddBtn">追加</button>
+    ${EV.length?"":`<span class="note">イベントは「管理」タブのマスタで登録できます</span>`}</div>`:"")+
+    `<div class="toolbar"><label class="filter">イベント<select id="evFilter"><option value="">すべてのイベント</option>${EV.map(e=>`<option value="${esc(e)}"${e===filter?" selected":""}>${esc(e)}</option>`).join("")}</select></label><span class="count">参加 ${total}件 / ${people.length}人</span>
+    <div class="grow"></div>${sortBar(S.iaaSort,[["name","名前"],["initialActionDate","初回アクション日"],["gradYear","年卒"]],"data-iaa-sort")}</div>
+    <div class="scrollx"><table class="t"><tr>${["No","名前","ふりがな","大学","学年","部活","ルート","アカウント名","初回アクション日","イベント",""].map(h=>`<th>${h}</th>`).join("")}</tr>${rows}</table></div>`;
+}
+function evEntries(id){ const c=S.candidates.find(x=>x.id===id); return c?eventEntriesOf(c).slice():null; }
+
+/* ================== 画面：担当リスト／全体リスト ================== */
+function filterOv(scopeUid, f){
+  const ws=words(f.q);
+  return S.candidates.filter(c=>{
+    if(scopeUid && c.ownerUid!==scopeUid) return false;
+    if(f.member && c.ownerUid!==f.member) return false;
+    if(f.grade && c.gradYear!==f.grade) return false;
+    if(f.route && c.route!==f.route) return false;
+    if(f.region && regionOf(c.university)!==f.region) return false;
+    if(f.university && c.university!==f.university) return false;
+    if(ws.length){ const t=[fullName(c),fullName(c).replace(/\s/g,""),c.lastNameFurigana,c.firstNameFurigana,c.university,c.gradYear,c.club,c.route,c.accountName,c.memo,ownerOf(c),c.opsMember].join(" ").toLowerCase(); if(!ws.every(w=>t.includes(w))) return false; }
+    return true; });
+}
+function renderOverview(all){
+  const f=all?S.adminOvFilter:S.ovFilter, key=all?"adminOvFilter":"ovFilter";
+  const H=["No",...(all?["担当"]:[]),"名前","大学","地域","学年","部活","ルート","進捗","最終アクション"];
+  const base=filterOv(all?null:S.me, f), rows=base.filter(c=>!f.progress||progressOf(c)===f.progress);
+  const counts={}; base.forEach(c=>{ const p=progressOf(c); counts[p]=(counts[p]||0)+1; });
+  const shown=rows.slice(0,S.ovLimit), anyF=Object.values(f).some(Boolean);
+  const body=shown.map((c,i)=>{ const own=c.ownerUid===S.me;
+    return `<tr${own?` class="clickable" data-goto="${c.id}" tabindex="0" title="${esc(nameOf(c))}さんの画面を開く"`:""}><td class="num">${i+1}</td>${all?`<td style="white-space:nowrap">${esc(ownerOf(c))}</td>`:""}
+      <td style="font-weight:700">${esc(nameOf(c)||"（名前未入力）")}</td><td>${esc(c.university)}</td><td>${esc(regionOf(c.university))}</td><td>${esc(c.gradYear)}</td><td>${esc(c.club)}</td><td>${esc(c.route)}</td><td>${pill(progressOf(c))}</td><td>${esc(slash(latestActionDate(c)||c.initialActionDate||c.contactedAt)||"—")}</td></tr>`; }).join("")
+    || `<tr class="empty-row"><td colspan="${H.length}">条件に合う人はいません</td></tr>`;
+  const known=new Set(uniNames()); const uOpts=[...uniNames(),...[...new Set(S.candidates.map(c=>c.university).filter(u=>u&&!known.has(u)))].sort((a,b)=>a.localeCompare(b,"ja"))];
+  const sel=(k,l,opts,labels)=>`<label class="filter">${l}<select data-ov="${k}" data-ov-key="${key}"><option value="">すべて</option>${opts.map((o,i)=>`<option value="${esc(o)}"${o===f[k]?" selected":""}>${esc(labels?labels[i]:o)}</option>`).join("")}</select></label>`;
+  const ms=S.members||[];
+  return `<div class="toolbar"><b style="font-size:13px">${all?"チーム全員の案件":"自分の案件"}</b><span class="count">${rows.length}人${anyF?"（絞り込み中）":""}</span></div>
+    <div class="toolbar">${all?sel("member","担当",ms.map(m=>m.id),ms.map(m=>m.name)):""}${sel("university","大学",uOpts)}${sel("region","地域",REGION_OPTIONS)}${sel("grade","学年",M().gradYears)}${sel("route","ルート",M().routes)}
+      <label class="filter">検索<input data-ov-q="${key}" value="${esc(f.q)}" placeholder="${all?"氏名・大学・部活・担当者など":"氏名・部活など"}" style="min-width:${all?220:140}px"/></label>${anyF?`<button class="btn sm" data-ov-clear="${key}">条件をクリア</button>`:""}</div>
+    <div class="chips">${PROGRESS_OPTIONS.map(p=>`<button class="chip${f.progress===p?" active":""}" data-ov-prog="${esc(p)}" data-ov-key="${key}">${esc(p)}<b>${counts[p]||0}</b></button>`).join("")}</div>
+    <div class="scrollx"><table class="t"><tr>${H.map(h=>`<th>${h}</th>`).join("")}</tr>${body}</table></div>
+    ${rows.length>shown.length?`<div style="text-align:center;margin-top:10px"><button class="btn" data-ov-more>さらに表示（残り${rows.length-shown.length}人）</button></div>`:""}
+    <p class="note" style="margin-top:10px">${all?"チーム全員の登録を見られます。":""}閲覧専用です。編集は見込み顧客・IAA・イベントの各画面で行います。${all?"":"自分の案件の行を押すと、その人の画面へ移動します。"}</p>`;
+}
+
+/* ================== 画面：ダッシュボード ================== */
+const weekOfDay = d => Math.min(4, Math.floor((d-1)/7)+1);
+function inPeriod(ds, p){ const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(ds||""); if(!m) return false; if(!p||!p.ym) return true; if(m[1]+"-"+m[2]!==p.ym) return false; return !p.week || weekOfDay(Number(m[3]))===p.week; }
+function periodLabel(p){ if(!p.ym) return "全期間"; const [y,m]=p.ym.split("-"); return `${y}年${Number(m)}月`+(p.week?`${p.week}週目`:""); }
+function stats(nums){ const v=nums.filter(n=>n!==null&&n>=0).sort((a,b)=>a-b); if(!v.length) return null; const mid=Math.floor(v.length/2);
+  return {avg:Math.round(v.reduce((x,y)=>x+y,0)/v.length*10)/10, median:v.length%2?v[mid]:(v[mid-1]+v[mid])/2, min:v[0], max:v[v.length-1], n:v.length}; }
+function renderDash(forWho, label){
+  const now=new Date(), today=ymd(now), p=S.dashPeriod;
+  const own=S.candidates.filter(c=>(forWho===null||c.ownerUid===forWho) && nameOf(c));
+  const info=dupInfo(S.candidates);
+  const gy=p.ym?Number(p.ym.slice(0,4)):now.getFullYear(), gm=p.ym?Number(p.ym.slice(5,7)):now.getMonth()+1;
+  const goalDocs=forWho===null?Object.values(S.apoAll):[S.apoAll[forWho]];
+  const grids=goalDocs.map(d=>gridOf(d,gy));
+  const weekGoal=w=>grids.reduce((s,g)=>s+(Number(g[w][gm-1])||0),0);
+  const monthGoal=["w1","w2","w3","w4"].reduce((s,w)=>s+weekGoal(w),0);
+  const shownGoal=p.week?weekGoal("w"+p.week):monthGoal;
+  const gp={ym:gy+"-"+String(gm).padStart(2,"0"),week:p.week};
+  const actual=own.filter(c=>inPeriod(c.interview1,gp)).length;
+  const pct=shownGoal>0?Math.min(100,Math.round(actual/shownGoal*100)):0;
+  const gLabel=`${gy}年${gm}月`+(p.week?`${p.week}週目`:"");
+
+  // 期間の選択肢
+  const set=new Set(); for(let i=0;i<12;i++){ const d=new Date(now.getFullYear(),now.getMonth()-i,1); set.add(d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")); }
+  const curYm=today.slice(0,7);
+  S.candidates.forEach(c=>[c.interview1,c.a2,c.dml,c.proposalDate,c.participationDate,c.enrolled,registeredDate(c)].forEach(d=>{ const m=/^(\d{4}-\d{2})/.exec(d||""); if(m&&m[1]<=curYm) set.add(m[1]); }));
+  const months=[...set].sort().reverse();
+  const periodBar=`<div class="dash-period"><label class="filter">期間<select id="dashMonth"><option value="">全期間</option>${months.map(ym=>{ const [y,m]=ym.split("-"); return `<option value="${ym}"${ym===p.ym?" selected":""}>${y}年${Number(m)}月</option>`; }).join("")}</select></label>
+    <label class="filter">週<select id="dashWeek"${p.ym?"":" disabled"}><option value="">月全体</option>${[[1,7],[8,14],[15,21],[22,31]].map(([a,b],i)=>`<option value="${i+1}"${p.week===i+1?" selected":""}>${i+1}週目（${a}〜${i===3?"月末":b+"日"}）</option>`).join("")}</select></label>
+    <span class="note">${p.ym?"リードタイム・移行率・段階ごとの人数は、この期間の分だけで数えます":"月を選ぶと、その月（さらに週）の数字だけで見られます"}</span></div>`;
+
+  // アラート
+  const gap=own.filter(c=>c.interview1&&!c.enrolled&&!c.declined).map(c=>{ const st=computeStatus(c), last=latestActionDate(c), el=diffDays(last,today), lim=alertDaysFor(st); return {c,st,last,el,lim}; })
+    .filter(x=>x.el!==null&&x.el>x.lim).sort((a,b)=>(b.el-b.lim)-(a.el-a.lim))
+    .map(x=>({id:x.c.id,name:nameOf(x.c),reason:`「${x.st}」から${x.el}日経過（${md(x.last)}・目安${x.lim}日を超過）`,sev:"warn"}));
+  const contact=own.filter(c=>computeStage(c)==="lead"&&!c.interview1&&isDate(c.contactedAt)).map(c=>({c,el:diffDays(c.contactedAt,today)})).filter(x=>x.el!==null&&x.el>alertContact()).sort((a,b)=>b.el-a.el)
+    .map(x=>({id:x.c.id,name:nameOf(x.c),reason:`接触（${md(x.c.contactedAt)}）から${x.el}日、面談の日付が未設定（目安${alertContact()}日を超過）`,sev:"warn",tab:"lead"}));
+  const dupA=own.filter(c=>info[c.id]).map(c=>{ const d=info[c.id]; const who=d.cross?[...new Set(d.others.filter(o=>o.ownerUid!==c.ownerUid).map(ownerOf))].join("・")+"さんと重複":"同じ担当者の一覧内で重複"; return {id:c.id,name:nameOf(c),reason:who,sev:"dup",tab:"lead"}; });
+  const items=[...dupA,...gap,...contact,
+    ...own.filter(c=>computeStage(c)==="interview"&&!c.a2&&!c.dml).map(c=>({id:c.id,name:nameOf(c),reason:"①A2・②DMLがまだ未着手です",sev:"info"})),
+    ...own.filter(c=>computeStage(c)==="lead"&&!c.interview1).map(c=>({id:c.id,name:nameOf(c),reason:"IAA（面談1回目）の日付が未設定です",sev:"info",tab:"lead"}))].slice(0,20);
+  const clickable = forWho===S.me;
+  const alertHtml=items.length?items.map(a=>`<div class="arow ${a.sev}"${clickable?` data-goto="${a.id}"${a.tab?` data-goto-tab="${a.tab}"`:""} tabindex="0"`:""}><span class="n">${esc(a.name)}</span><span class="r">${a.sev==="dup"?"重複：":a.sev==="warn"?"⚠ ":""}${esc(a.reason)}</span><span class="go">${clickable?"›":""}</span></div>`).join(""):`<div class="dempty">対応漏れの候補者はいません。順調です。</div>`;
+
+  // ネクストアクション
+  const up=[]; own.forEach(c=>STEPS.filter(s=>!s.text).forEach(s=>{ if(c[s.field]&&c[s.field]>=today) up.push({id:c.id,name:nameOf(c),date:c[s.field],label:s.label,field:s.field,meta:[c.university,c.gradYear].filter(Boolean).join("・")}); }));
+  up.sort((a,b)=>a.date.localeCompare(b.date));
+  const nx=own.filter(c=>isIaa(c)&&!c.enrolled&&!c.declined).map(c=>{ const f=nextMainField(c), last=latestActionDate(c); return f?{id:c.id,name:nameOf(c),field:f,label:STEP_BY[f].label,last,el:diffDays(last,today),meta:[c.university,c.gradYear].filter(Boolean).join("・")}:null; }).filter(Boolean).sort((a,b)=>(b.el??-1)-(a.el??-1));
+  const MAX=forWho===null?30:Infinity;
+  const g=id=>clickable?` data-goto="${id}" tabindex="0"`:"";
+  const naHtml=(up.length||nx.length)?`<div class="na-list">${up.slice(0,MAX).map(it=>`<div class="na-row"${g(it.id)}><span class="na-when${it.date===today?" today":""}">${it.date===today?"今日":"予定 "+md(it.date)}</span><span class="na-name">${esc(it.name)}</span><span class="na-chip" style="--c:var(--s-${it.field})">${esc(it.label)}</span><span class="na-meta">${esc(it.meta)}</span><span class="go">›</span></div>`).join("")}
+    ${nx.slice(0,MAX).map(it=>`<div class="na-row"${g(it.id)}><span class="na-when${it.el>14?" late":""}">${it.el===null?"—":it.el+"日経過"}</span><span class="na-name">${esc(it.name)}</span><span class="na-chip" style="--c:var(--s-${it.field})">次：${esc(it.label)}</span><span class="na-meta">${it.last?"最終 "+md(it.last)+"・":""}${esc(it.meta)}</span><span class="go">›</span></div>`).join("")}</div>`:`<div class="dempty">IAA中の人はいません。</div>`;
+
+  // ファネル
+  const funnel=p.ym?[["見込み",own.filter(c=>inPeriod(registeredDate(c),p)).length],["IAA（面談）",own.filter(c=>inPeriod(c.interview1,p)).length],["①A2基準達成",own.filter(c=>inPeriod(c.a2,p)).length],["③提案",own.filter(c=>inPeriod(c.proposalDate,p)).length],["⑤参加",own.filter(c=>inPeriod(c.participationDate,p)).length],["⑥入会",own.filter(c=>inPeriod(c.enrolled,p)).length]]
+    :[["見込み",own.length],["IAA（面談）",own.filter(c=>c.interview1).length],["①A2基準達成",own.filter(c=>c.a2).length],["③提案",own.filter(c=>c.proposal||c.proposalDate).length],["⑤参加",own.filter(c=>c.participationDate).length],["⑥入会",own.filter(c=>c.enrolled).length]];
+  const fmax=Math.max(1,funnel[0][1]);
+  const funnelHtml=funnel.map(([l,n],i)=>`<div class="funnel-row"><span>${l}</span><div class="funnel-track"><div class="funnel-bar" style="width:${Math.max(n?4:0,Math.round(n/fmax*100))}%;opacity:${1-i*.1}"></div></div><span class="funnel-num">${n}</span></div>`).join("");
+
+  // 移行率
+  const iaa=c=>!!c.interview1, a2=c=>!!c.a2, prop=c=>!!(c.proposal||c.proposalDate), part=c=>!!c.participationDate, enr=c=>!!c.enrolled;
+  const steps=[["IAA化",()=>true,iaa,registeredDate],["①A2達成",iaa,a2,c=>c.interview1],["③提案",a2,prop,c=>c.a2],["⑤参加",prop,part,c=>c.proposalDate],["⑥入会",part,enr,c=>c.participationDate]];
+  const conv=steps.map(([l,from,to,fd])=>{ const b=own.filter(from).filter(c=>!p.ym||inPeriod(fd(c),p)); const t=b.filter(to).length; return [l,b.length?Math.round(t/b.length*100):null,t,b.length]; });
+  const convHtml=`<div class="conv-row">${conv.map(([l,pc,t,f])=>`<div class="conv-item"><div class="conv-pct">${pc===null?"—":pc+"<small>%</small>"}</div><div class="conv-label">${l}</div><div class="conv-n">${t}/${f}人</div></div>`).join('<span class="conv-arrow">›</span>')}</div>`;
+
+  // 滞留
+  const active=own.filter(c=>c.interview1&&!c.enrolled&&!c.declined);
+  const sd=stats(active.map(c=>diffDays(latestActionDate(c),today)));
+  const overdue=active.filter(c=>{ const d=diffDays(latestActionDate(c),today); return d!==null&&d>alertDaysFor(computeStatus(c)); }).length;
+  const d1=v=>v===null||v===undefined?"—":`${v}<small>日</small>`;
+  const stgHtml=`<div class="stg-row"><div class="stg-item"><span>進行中</span><b>${active.length}<small>人</small></b></div><div class="stg-item"><span>最終アクションからの平均</span><b>${sd?d1(sd.avg):"—"}</b></div><div class="stg-item${overdue?" warn":""}"><span>目安日数を超えて止まっている</span><b>${overdue}<small>人</small></b></div></div>`;
+
+  // リードタイム
+  const pairs=[["見込み登録 → 面談1回目",c=>diffDays(registeredDate(c),c.interview1),c=>c.interview1],["面談1回目 → ①A2基準達成",c=>diffDays(c.interview1,c.a2),c=>c.a2],["①A2 → ②DML動画配布",c=>diffDays(c.a2,c.dml),c=>c.dml],["②DML → ④提案日",c=>diffDays(c.dml,c.proposalDate),c=>c.proposalDate],["④提案日 → ⑤参加日",c=>diffDays(c.proposalDate,c.participationDate),c=>c.participationDate],["⑤参加日 → ⑥入会",c=>diffDays(c.participationDate,c.enrolled),c=>c.enrolled],["面談1回目 → ⑥入会（合計）",c=>diffDays(c.interview1,c.enrolled),c=>c.enrolled]];
+  const ltHtml=`<table class="lt"><tr><th>区間</th><th>平均</th><th>中央値</th><th>最短</th><th>最長</th><th>人数</th></tr>${pairs.map(([l,fn,end])=>{ const r=stats((p.ym?own.filter(c=>inPeriod(end(c),p)):own).map(fn));
+    return `<tr><td class="l">${l}</td>${r?`<td class="main">${d1(r.avg)}</td><td>${d1(r.median)}</td><td>${d1(r.min)}</td><td>${d1(r.max)}</td><td>${r.n}人</td>`:`<td class="none" colspan="5">まだデータがありません</td>`}</tr>`; }).join("")}</table>`;
+
+  const goalHtml=`<div class="goal-wrap"><div class="ring" style="--pct:${pct}"><span>${pct}<small>%</small></span></div><div><div style="font-size:13px">実績 <b>${actual}</b> / 目標 <b>${shownGoal}</b></div>
+    <div class="note">${shownGoal===0?`「アポ目標」でこの${p.week?"週":"月"}の目標を設定すると、ここに達成率が表示されます。`:`実績＝見込み顧客の「IAA」の日付が${gLabel}の人数`}</div></div></div>
+    <div class="dsub">週ごとの目標（${gm}月）</div><div class="mini-list">${["w1","w2","w3","w4"].map((w,i)=>`<div class="mini-row${p.week===i+1?" current":""}"><span>${i+1}週目</span><b>${weekGoal(w)}<small>件</small></b></div>`).join("")}</div>`;
+  const ym=today.slice(0,7), inMonth=f=>own.filter(c=>(c[f]||"").slice(0,7)===ym).length;
+  const monthHtml=`<div class="dsub">今月の動き</div><div class="mini-list">${[["IAA（面談1回目）","interview1"],["①A2基準達成","a2"],["④提案","proposalDate"],["⑤参加","participationDate"],["⑥入会","enrolled"]].map(([l,f])=>`<div class="mini-row"><span><i class="mini-dot" style="--c:var(--s-${f})"></i>${l}</span><b>${inMonth(f)}<small>件</small></b></div>`).join("")}</div>`;
+  const dupCount=own.filter(c=>info[c.id]).length, evCount=own.filter(isEventC).length, decl=own.filter(c=>c.declined).length;
+  return `<div class="dash">${periodBar}<div class="dash-top">
+    <section class="dcard"><h3>${p.ym?"アポ目標":"今月のアポ目標"}（${gLabel}）</h3>${goalHtml}</section>
+    <section class="dcard"><h3>リードタイム（${esc(label||"自分の数字")}${p.ym?"・"+periodLabel(p):""}）</h3><div class="dsub first">段階ごとの移行率</div>${convHtml}<div class="dsub">滞留状況</div>${stgHtml}<div class="dsub">区間ごとの日数</div>${ltHtml}</section>
+    <section class="dcard"><h3>${p.ym?`段階ごとの人数（${periodLabel(p)}）`:"段階ごとの人数"}</h3>${funnelHtml}${p.ym?"":monthHtml}</section></div>
+    <div class="dash-bottom"><section class="dcard"><h3>ネクストアクション <span class="count">${up.length+nx.length}件</span></h3>${naHtml}</section>
+    <section class="dcard"><h3>経過日数・重複アラート</h3><div class="dash-stats"><div class="dstat"><div class="l">重複検知</div><div class="v" style="${dupCount?"color:var(--danger)":""}">${dupCount}</div></div><div class="dstat"><div class="l">イベント参加</div><div class="v">${evCount}</div></div><div class="dstat"><div class="l">⑦見送り</div><div class="v" style="${decl?"color:var(--danger)":""}">${decl}</div></div></div><div class="alist">${alertHtml}</div></section></div></div>`;
+}
+
+/* ================== 画面：管理 ================== */
+function renderAdmin(){
+  const sec=S.adminSection;
+  const subs=[["dash","全体ダッシュボード"],["members","メンバー"],["masters","マスタ"],["alert","アラート日数"],["invite","招待・アカウント"],["import","データ移行"]];
+  let body="";
+  if(sec==="import") body=renderImport();
+  else if(sec==="invite") body=renderInvites();
+  else if(sec==="dash"){ const who=S.adminDashWho;
+    body=`<div class="toolbar"><label class="filter">担当者<select id="adminDashWho"><option value="">全員</option>${(S.members||[]).map(m=>`<option value="${esc(m.id)}"${who===m.id?" selected":""}>${esc(m.name)}</option>`).join("")}</select></label></div>`+renderDash(who||null, who?memberName(who)+"さんの数字":"全員の数字"); }
+  else if(sec==="members"){
+    const ms=(S.members||[]).slice().sort((a,b)=>(a.order??0)-(b.order??0));
+    body=`<div class="admin-grid"><section class="dcard"><h3>メンバー一覧</h3>${ms.map(m=>{ const n=S.candidates.filter(c=>c.ownerUid===m.id).length;
+      return `<div class="mrow"><input class="inp" data-mem-name="${esc(m.id)}" value="${esc(m.name)}"/><label class="note" style="white-space:nowrap"><input type="checkbox" data-mem-active="${esc(m.id)}"${m.active!==false?" checked":""}/> ログイン一覧に表示</label><span class="note" style="white-space:nowrap">${n}件</span></div>`; }).join("")||'<div class="note">まだいません</div>'}
+      <div class="mrow" style="margin-top:12px"><input class="inp" id="newMemberName" placeholder="新しいメンバーの名前"/><button class="btn primary" id="addMemberBtn">追加</button><span></span></div>
+      <p class="note">名前を変えると、ログイン画面と一覧の表示が変わります。辞めた人は「ログイン一覧に表示」を外してください（担当していた案件のデータは残ります）。</p></section></div>`;
+  }
+  else if(sec==="masters"){
+    const m=M(), ta=(k,l,v,hint)=>`<section class="dcard"><h3>${l}</h3><textarea class="inp" data-master="${k}">${esc(v)}</textarea><p class="note">${hint||"1行に1つずつ入力します。"}</p></section>`;
+    body=`<div class="admin-grid">${ta("universities","大学",m.universities.map(u=>u.name+(u.region&&u.region!=="未設定"?","+u.region:"")).join("\n"),`1行に「大学名,地域」の形で入力します（地域：${REGION_OPTIONS.join("・")}）。`)}
+      ${ta("events","イベント",m.events.join("\n"))}${ta("clubs","部活",m.clubs.join("\n"))}${ta("routes","ルート",m.routes.join("\n"))}${ta("gradYears","学年（年卒）",m.gradYears.join("\n"))}${ta("proposals","③提案の選択肢",m.proposals.join("\n"))}</div>
+      <div style="margin-top:12px"><button class="btn primary" id="saveMasters">マスタを保存</button> <span class="note">一覧にない値も各画面で自由に入力できます。</span></div>`;
+  }
+  else if(sec==="alert"){
+    const a=M().alert||{}, num=(k,v)=>`<input class="inp" type="number" min="1" max="365" style="width:90px" data-alert="${k}" value="${v}"/>`;
+    body=`<section class="dcard" style="max-width:520px"><h3>アラートの目安日数</h3><p class="note">最後のアクションからこの日数を超えて止まっている人を、ダッシュボードのアラートに出します。</p>
+      <div class="mini-list"><div class="mini-row"><span>接触（見込み登録）→ 面談日の設定まで</span>${num("contact",a.contact||10)}</div>
+      ${ALERT_STATUSES.map(st=>`<div class="mini-row"><span>${st}</span>${num("s:"+st,(a.byStatus&&a.byStatus[st])||a.default||10)}</div>`).join("")}
+      <div class="mini-row"><span>上記以外</span>${num("default",a.default||10)}</div></div>
+      <div style="margin-top:12px"><button class="btn primary" id="saveAlert">保存</button></div></section>`;
+  }
+  return `<div class="admin-sub">${subs.map(([k,l])=>`<button class="btn${sec===k?" primary":""}" data-admin-sec="${k}">${l}</button>`).join("")}</div>${body}`;
+}
+async function saveMasters(patch){
+  if(!S.isAdmin) return;
+  const next={...M(),...patch};
+  try{ await enqueue("masters", ()=>S.db.doc("settings/masters").set(next)); S.masters=next; toast("保存しました"); }
+  catch(e){ writeFailed(e); }
+  render(true);
+}
+
+/* ================== 管理：招待・アカウント ================== */
+function renderInvites(){
+  const accByMember={}; S.accounts.forEach(a=>{ (accByMember[a.memberId]=accByMember[a.memberId]||[]).push(a); });
+  const invByMember={}; S.invites.forEach(i=>{ (invByMember[i.memberId||""]=invByMember[i.memberId||""]||[]).push(i); });
+  const linkBox=code=>`<div style="display:flex;gap:6px;align-items:center;margin-top:4px"><input class="inp" readonly value="${esc(inviteLink(code))}" style="font-size:11px" data-select-all/><button class="btn sm" data-copy="${esc(inviteLink(code))}">コピー</button><button class="btn sm danger" data-inv-del="${esc(code)}">無効にする</button></div>`;
+  const ms=(S.members||[]).filter(m=>m.active!==false);
+  const rows=ms.map(m=>{ const acc=accByMember[m.id]||[], inv=invByMember[m.id]||[];
+    return `<tr><td style="font-weight:700;white-space:nowrap">${esc(m.name)}</td>
+      <td>${acc.length?acc.map(a=>`<div><span class="badge" style="background:#dcfce7;color:#166534">登録済み</span> ${esc(a.name)}　${esc(a.email||"")}　<button class="btn sm" data-acc-del="${esc(a.id)}" title="このアカウントとシートのつながりを解除">解除</button></div>`).join(""):`<span class="badge">未登録</span>`}</td>
+      <td style="min-width:360px">${inv.map(i=>linkBox(i.id)).join("")}${inv.length?"":`<button class="btn sm" data-inv-new="${esc(m.id)}">招待リンクを作成</button>`}</td>
+      <td><button class="btn sm" data-act-as="${esc(m.id)}">このシートを開く</button></td></tr>`; }).join("");
+  const generic=invByMember[""]||[];
+  const unbound=S.accounts.filter(a=>!(S.members||[]).some(m=>m.id===a.memberId && m.active!==false));
+  return `<section class="dcard" style="margin-bottom:12px"><h3>新しいメンバーを招待</h3>
+      <p class="note">このリンクを開いた人は、メールアドレスと名前を入力すると新しいメンバーとして登録され、自分のシートで使い始められます。次回からは自動でログインします。</p>
+      ${generic.map(i=>linkBox(i.id)).join("")}<div style="margin-top:8px"><button class="btn primary" data-inv-new="">新規メンバー用の招待リンクを作成</button></div>
+      <p class="note" style="margin-top:8px">招待リンクは、LINEやメールでそのまま送れます。登録した端末では、次回から自動でログインします。</p></section>
+    <section class="dcard"><h3>今いるメンバーの招待</h3><p class="note">今いるメンバーには、その人専用の招待リンクを送ってください。登録すると、これまでの見込み顧客がそのまま引き継がれます。</p>
+      <div class="scrollx" style="max-height:none"><table class="t"><tr><th>担当者</th><th>アカウント</th><th>招待リンク</th><th></th></tr>${rows}</table></div>
+      ${unbound.length?`<p class="note" style="margin-top:8px">シートにつながっていないアカウント：${unbound.map(a=>`${esc(a.name)}（${esc(a.email||"")}） <button class="btn sm" data-acc-del="${esc(a.id)}">削除</button>`).join(" ")}</p>`:""}</section>`;
+}
+async function createInvite(memberId){
+  const code=[...crypto.getRandomValues(new Uint8Array(12))].map(b=>"abcdefghijkmnpqrstuvwxyz23456789"[b%32]).join("");
+  try{ await S.db.doc("invites/"+code).set({memberId:memberId||null, memberName:memberId?memberName(memberId):"", createdAt:new Date().toISOString(), createdBy:S.uid}); toast("招待リンクを作成しました"); }
+  catch(e){ writeFailed(e); }
+}
+
+/* ================== データ移行（元アプリから書き出したファイルを取り込む） ================== */
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
+function renderImport(){
+  const f=S.importFile, st=S.importState;
+  return `<div class="import-box"><h3 style="margin:0 0 8px;font-size:14px">元アプリのデータを取り込む</h3>
+    <p class="note">元アプリから書き出した移行ファイル（arxcs-migration.json）を選んでください。同じファイルを何度取り込んでも、同じ人が二重に登録されることはありません（元アプリのIDで上書きします）。</p>
+    <input type="file" id="importFile" accept=".json,application/json" ${st&&st.running?"disabled":""}/>
+    <div class="note" style="margin:10px 0 4px">または、移行データをここに貼り付け：</div>
+    <textarea class="inp" id="importPaste" style="min-height:70px" placeholder="移行データ（{&quot;format&quot;:&quot;arxcs-migration-v1&quot; …}）を貼り付け" ${st&&st.running?"disabled":""}></textarea>
+    ${f?`<div class="mini-list" style="margin-top:12px"><div class="mini-row"><span>見込み顧客</span><b>${f.candidates.length}件</b></div><div class="mini-row"><span>メンバー（過去の担当者を含む）</span><b>${f.members.length}名</b></div><div class="mini-row"><span>アポ目標</span><b>${Object.keys(f.apoGoals||{}).length}名分</b></div><div class="mini-row"><span>マスタ（大学など）</span><b>${f.masters?"あり":"なし"}</b></div></div>
+      <div style="margin-top:12px"><button class="btn primary" id="runImport" ${st&&st.running?"disabled":""}>取り込む</button></div>`:""}
+    <div id="importProgress">${importProgressHtml()}</div></div>`;
+}
+function importProgressHtml(){
+  const st=S.importState; if(!st) return "";
+  const pct=st.total?Math.round(st.done/st.total*100):0;
+  return `<div class="progress"><div style="width:${pct}%"></div></div><div class="note">${st.running?"取り込み中です。この画面を閉じずにお待ちください。":"取り込みが終わりました。"} ${st.done} / ${st.total}${st.failed?`（失敗 ${st.failed}件。もう一度「取り込む」を押すと続きを入れ直します）`:""}</div>`;
+}
+function updateImportUI(){ const el=document.getElementById("importProgress"); if(el) el.innerHTML=importProgressHtml(); }
+async function runImport(){
+  if(!S.isAdmin) return;
+  const f=S.importFile; if(!f || (S.importState&&S.importState.running)) return;
+  const ops=[];
+  if(f.masters) ops.push(["settings/masters", {...DEFAULT_MASTERS, ...f.masters, alert:{...DEFAULT_MASTERS.alert, ...((S.masters||{}).alert||{}), ...(f.masters.alert||{})}}]);
+  f.members.forEach(m=>ops.push(["members/"+m.id, {name:m.name, active:m.active!==false, order:m.order??999}]));
+  Object.entries(f.apoGoals||{}).forEach(([id,d])=>ops.push(["apoGoals/"+id, d]));
+  f.candidates.forEach(c=>{ const {id,...rest}=c; ops.push(["candidates/"+id, rest]); });
+  S.importing=true; S.importState={total:ops.length, done:0, failed:0, running:true}; render(true);
+  let i=0, failed=0;
+  const worker=async()=>{ while(i<ops.length){ const [p,d]=ops[i++]; let tries=0;
+    for(;;){ try{ await S.db.doc(p).set(d); break; }
+      catch(e){ if((["resource-exhausted","unavailable","deadline-exceeded","aborted"].includes(e.code)) && tries<8){ tries++; await sleep(400*Math.pow(2,Math.min(tries,5))); continue; } failed++; console.error("取り込み失敗",p,e); break; } }
+    S.importState.done++; S.importState.failed=failed; if(S.importState.done%10===0 || S.importState.done===ops.length) updateImportUI(); } };
+  await Promise.all([worker(),worker(),worker(),worker()]);
+  S.importState.running=false; S.importing=false; render(true);
+  toast(failed?`取り込みが終わりました（失敗 ${failed}件）`:`${f.candidates.length}件の取り込みが終わりました`, 6000);
+}
+
+/* ================== 描画 ================== */
+function renderBody(){
+  switch(S.tab){
+    case "dash": return renderDash(S.me);
+    case "apo": return renderApo();
+    case "lead": return renderLead();
+    case "mtg": return renderMtg();
+    case "event": return renderEvent();
+    case "overview": return renderOverview(false);
+    case "all": return renderOverview(true);
+    case "admin": return S.isAdmin ? renderAdmin() : `<div class="banner err">この画面は管理者だけが使えます。</div>`;
+  }
+  return "";
+}
+function captureFocus(){
+  const a=document.activeElement; if(!a || a===document.body || !document.getElementById("app").contains(a)) return null;
+  const attrs=["data-id","data-field","data-draft","id","data-na-input","data-ov-q","data-mem-name","data-master","data-alert"];
+  const sel=attrs.filter(k=>a.hasAttribute(k)).map(k=>`[${k}="${CSS.escape(a.getAttribute(k))}"]`).join("");
+  if(!sel) return null;
+  let s=null,e=null; try{ s=a.selectionStart; e=a.selectionEnd; }catch(x){}
+  const row=a.closest("[data-search]"); return {sel, s, e, inCard: !!(row && row.classList.contains("lcard"))};
+}
+function render(force){
+  const app=document.getElementById("app");
+  // 入力中に他の人の更新が届いても、打っている途中の欄が作り直されないよう、描画をフォーカスが外れるまで待つ
+  if(S.importing && !force) return;
+  if(!force && (pointerIsDown || isTypingDirty())){ S.deferRender=true; return; }
+  S.deferRender=false;
+  if(!S.me && S.account && S.account.memberId) S.me=S.account.memberId;
+  if(!S.me || (S.me!=="__admin__" && !(S.members||[]).some(m=>m.id===S.me))){
+    app.innerHTML=renderLogin(); bindLogin(); return;
+  }
+  const scrolls=[...app.querySelectorAll(".scrollx")].map(el=>[el.scrollLeft,el.scrollTop]);
+  const wy=window.scrollY, focus=captureFocus();
+  if(S.tab==="admin" && !S.isAdmin) S.tab="dash";
+  app.innerHTML=renderTop()+`<div class="app-content">`+
+
+    (S.stale?`<div class="banner">データの最新状態を確認できていません。通信状態をご確認ください。</div>`:"")+
+
+    renderBody()+`</div><div class="watermark">Arxcs</div>`;
+  bindApp();
+  if(S.lastTab===S.tab){ app.querySelectorAll(".scrollx").forEach((el,i)=>{ if(scrolls[i]){ el.scrollLeft=scrolls[i][0]; el.scrollTop=scrolls[i][1]; } }); window.scrollTo(0,wy); }
+  else window.scrollTo(0,0);
+  S.lastTab=S.tab;
+  if(focus){ const el=app.querySelector(focus.sel); if(el){ el.focus({preventScroll:true}); try{ if(focus.s!=null) el.setSelectionRange(focus.s,focus.e); }catch(x){} } }
+  if(S.focusRow){ const r=app.querySelector(`[data-row="${S.focusRow}"]`); if(r){ r.scrollIntoView({block:"center"}); r.style.outline="2px solid var(--brand)"; } S.focusRow=null; }
+}
+// 入力中（打ちかけで未確定）の欄があるか。あれば、他の人の更新が届いても描画を待つ
+function isTypingDirty(){
+  const a=document.activeElement, app=document.getElementById("app");
+  if(!a || !app.contains(a) || !/^(INPUT|TEXTAREA)$/.test(a.tagName)) return false;
+  if(a.type==="checkbox") return false;
+  return a.value!==a.defaultValue || a.hasAttribute("data-draft") || a.id==="leadSearch";
+}
+let pointerIsDown=false;
+document.addEventListener("pointerdown",()=>{ pointerIsDown=true; },true);
+document.addEventListener("pointerup",()=>{ setTimeout(()=>{ pointerIsDown=false; if(S.deferRender) render(); },30); },true);
+document.addEventListener("focusout",()=>{ setTimeout(()=>{ if(S.deferRender) render(); },0); });
+let toastTimer=null;
+function toast(msg, ms){
+  let t=document.getElementById("toast");
+  if(!t){ t=document.createElement("div"); t.id="toast"; t.className="toast"; t.setAttribute("role","status"); document.body.appendChild(t); }
+  t.textContent=msg; t.style.display="";
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>{ t.style.display="none"; },ms||2500);
+}
+
+/* ================== イベント処理 ================== */
+const $$ = (sel, root) => [...(root||document).querySelectorAll(sel)];
+function bindLogin(){
+  const f=document.getElementById("regForm");
+  if(f) f.onsubmit=e=>{ e.preventDefault(); const n=document.getElementById("regName").value.trim(), m=document.getElementById("regEmail").value.trim();
+    if(!n){ document.getElementById("regName").focus(); return; }
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(m)){ toast("メールアドレスの形式を確認してください"); document.getElementById("regEmail").focus(); return; }
+    registerFromInvite(n,m); };
+  const sb=document.getElementById("setupBtn");
+  if(sb) sb.onclick=()=>{ const k=document.getElementById("setupKey").value.trim(); if(k) becomeAdmin(k); };
+  const aib=document.getElementById("adminImportBtn");
+  if(aib) aib.onclick=()=>{ S.me="__admin__"; S.actingAs="__admin__"; S.tab="admin"; S.adminSection="import"; render(true); };
+  const bb=document.getElementById("bindBtn");
+  if(bb) bb.onclick=()=>{ const v=document.getElementById("bindSel").value; if(!v){ document.getElementById("bindSel").focus(); return; } bindSelf(v, document.getElementById("bindEmail").value.trim()); };
+}
+async function addMember(name){
+  if(!S.isAdmin){ toast("メンバーの追加は管理者だけができます"); return null; }
+  const id="m"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+  const order=Math.max(0,...(S.members||[]).map(m=>m.order||0))+1;
+  try{ await S.db.doc("members/"+id).set({name, active:true, order}); return id; }
+  catch(e){ writeFailed(e); return null; }
+}
+function bindApp(){
+  const app=document.getElementById("app");
+  const bs=document.getElementById("backToSelf");
+  if(bs) bs.onclick=()=>{ S.actingAs=null; S.me=S.account?S.account.memberId:null; S.tab="admin"; render(true); };
+  const nb=document.getElementById("navMenuBtn"); if(nb) nb.onclick=()=>{ S.navOpen=!S.navOpen; render(true); };
+  $$("[data-tab]",app).forEach(b=>b.onclick=()=>{ S.tab=b.dataset.tab; LS.set("arxcs_tab",S.tab); S.navOpen=false; render(true); });
+
+  // セル編集（確定時に保存）
+  $$("input[data-id],select[data-id]",app).forEach(el=>{ el.onchange=()=>saveField(el.dataset.id, el.dataset.field, el.value.trim()); });
+  // 保存済みの行・カードでも、氏名を打つとふりがなが連動する
+  $$('input[data-field="name"][data-id]',app).forEach(nameEl=>{
+    const box=nameEl.closest("tr,.lcard"); const furi=box&&box.querySelector(`input[data-field="furigana"][data-id="${nameEl.dataset.id}"]`);
+    let pending=null; bindFurigana(nameEl, furi, v=>{ pending=v; });
+    nameEl.addEventListener("change",()=>{ if(pending===null) return; const v=pending; pending=null; setTimeout(()=>saveField(nameEl.dataset.id,"furigana",v),0); });
+  });
+
+  // 見込み顧客
+  const ls=document.getElementById("leadSearch");
+  if(ls) ls.addEventListener("input",()=>{ S.leadQuery=ls.value; const ws=words(S.leadQuery); const items=$$("[data-search]",app); let hit=0;
+    items.forEach(el=>{ const ok=!ws.length||wordsMatch(ws,el.dataset.search); if(ok) hit++; el.style.display=ok?"":"none"; });
+    const cnt=document.getElementById("leadCount"); if(cnt) cnt.textContent=ws.length?`${hit}件ヒット / 全${items.length}件`:`全${items.length}件`;
+    const nh=document.getElementById("noHit"); if(nh) nh.style.display=ws.length&&items.length&&!hit?"":"none"; });
+  $$("[data-lead-filter]",app).forEach(s=>s.onchange=()=>{ S.leadFilter={...S.leadFilter,[s.dataset.leadFilter]:s.value}; render(true); });
+  $$("[data-lead-filter-clear]",app).forEach(b=>b.onclick=()=>{ S.leadFilter={}; render(true); });
+  $$("[data-lead-sort]",app).forEach(b=>b.onclick=()=>{ S.leadSort=toggleSort(S.leadSort,b.dataset.leadSort); render(true); });
+  $$("[data-iaa-sort]",app).forEach(b=>b.onclick=()=>{ S.iaaSort=toggleSort(S.iaaSort,b.dataset.iaaSort); render(true); });
+  $$("[data-lead-view]",app).forEach(b=>b.onclick=()=>{ S.leadView=b.dataset.leadView; if(S.draftMode==="row"){ S.draft=null; S.draftMode=null; } render(true); });
+  $$("[data-dup-search]",app).forEach(b=>b.onclick=()=>{ S.leadQuery=b.dataset.dupSearch; render(true); });
+  const ar=document.getElementById("addRowBtn"); if(ar) ar.onclick=()=>{ S.draft=freshDraft(); S.draftMode="row"; render(true); const f=app.querySelector('[data-draft="name"]'); if(f) f.focus(); };
+  const af=document.getElementById("addFormBtn"); if(af) af.onclick=()=>{ S.draft=freshDraft(); S.draftMode="modal"; render(true); const f=app.querySelector('[data-draft="name"]'); if(f) f.focus(); };
+  $$("[data-draft]",app).forEach(el=>{ el.addEventListener("input",()=>{ S.draft[el.dataset.draft]=el.value; if(el.dataset.draft==="name"||el.dataset.draft==="accountName") refreshDup(); });
+    el.addEventListener("keydown",e=>{ if(e.key==="Enter"&&!e.isComposing&&el.tagName==="INPUT"){ e.preventDefault(); submitLead(); } }); });
+  bindFurigana(app.querySelector('[data-draft="name"]'), app.querySelector('[data-draft="furigana"]'), v=>{ if(S.draft) S.draft.furigana=v; });
+  const sb=document.getElementById("submitLead"); if(sb) sb.onclick=submitLead;
+  $$("[data-draft-close]",app).forEach(b=>b.onclick=()=>{ if(S.busy) return; S.draft=null; S.draftMode=null; render(true); });
+  $$("[data-backdrop]",app).forEach(el=>{ let down=false; el.addEventListener("mousedown",e=>{ down=e.target===el; }); el.addEventListener("click",e=>{ if(down&&e.target===el&&!S.busy){ S.draft=null; S.draftMode=null; render(true); } down=false; }); });
+  $$("[data-del]",app).forEach(b=>b.onclick=()=>{ S.pendingDelete=b.dataset.del; render(true); });
+  $$("[data-del-no]",app).forEach(b=>b.onclick=()=>{ S.pendingDelete=null; render(true); });
+  $$("[data-del-yes]",app).forEach(b=>b.onclick=async()=>{ const id=b.dataset.delYes, c=S.candidates.find(x=>x.id===id); S.pendingDelete=null;
+    try{ await enqueue("c/"+id,()=>S.db.doc("candidates/"+id).update({deleted:true, deletedBy:S.me})); toast(`${c?nameOf(c)||"この候補者":"この候補者"} さんを削除しました`); } catch(e){ writeFailed(e); } });
+
+  // アポ目標
+  $$("[data-apo-d]",app).forEach(b=>b.onclick=()=>apoStep(Number(b.dataset.apoW),Number(b.dataset.apoM),Number(b.dataset.apoD)));
+  const ay=document.getElementById("apoYear"); if(ay) ay.onchange=()=>{ S.apoYear=Number(ay.value); render(true); };
+
+  // IAA
+  $$("[data-iaa-mode]",app).forEach(b=>b.onclick=()=>{ S.iaaMode=b.dataset.iaaMode; LS.set("arxcs_iaa_mode",S.iaaMode); render(true); });
+  $$("[data-na-pick]",app).forEach(b=>b.onclick=()=>{ S.naStep[b.dataset.naPick]=b.dataset.naFieldPick||null; delete S.naDraft[b.dataset.naPick]; render(true); });
+  $$("[data-na-input]",app).forEach(el=>{ el.onchange=null; el.addEventListener("input",()=>{ S.naDraft[el.dataset.naInput]=el.value; });
+    el.addEventListener("keydown",e=>{ if(e.key==="Enter"&&!e.isComposing){ e.preventDefault(); const b=app.querySelector(`[data-na-confirm="${el.dataset.naInput}"]`); if(b) b.click(); } }); });
+  $$("[data-na-confirm]",app).forEach(b=>b.onclick=()=>{ const id=b.dataset.naConfirm, inp=app.querySelector(`[data-na-input="${id}"]`), v=inp?inp.value.trim():""; if(!v){ if(inp) inp.focus(); return; }
+    delete S.naStep[id]; delete S.naDraft[id]; saveField(id,b.dataset.naField,v); });
+  $$("[data-na-back]",app).forEach(b=>b.onclick=()=>{ const id=b.dataset.naBack, c=S.candidates.find(x=>x.id===id); if(!c) return; const l=lastConfirmed(c); if(!l) return; delete S.naStep[id]; delete S.naDraft[id]; saveField(id,l,""); });
+
+  // イベント
+  $$("[data-ev]",app).forEach(s=>s.onchange=()=>{ const l=evEntries(s.dataset.ev); if(!l) return; const i=Number(s.dataset.evI); if(i>=l.length) l.push(s.value); else l[i]=s.value; saveField(s.dataset.ev,"eventEntries",l); });
+  $$("[data-ev-add]",app).forEach(b=>b.onclick=()=>{ const l=evEntries(b.dataset.evAdd); if(!l) return; if(!l.length) l.push(""); l.push(""); saveField(b.dataset.evAdd,"eventEntries",l); });
+  $$("[data-ev-rm]",app).forEach(b=>b.onclick=()=>{ const l=evEntries(b.dataset.evRm); if(!l) return; l.splice(Number(b.dataset.evI),1); saveField(b.dataset.evRm,"eventEntries",l); });
+  const eab=document.getElementById("evAddBtn"); if(eab) eab.onclick=()=>{ const p=document.getElementById("evPerson"), n=document.getElementById("evName"); if(!p.value){ p.focus(); return; } if(!n.value){ n.focus(); return; }
+    const l=(evEntries(p.value)||[]).filter(Boolean); if(l.includes(n.value)){ toast("すでに登録済みです"); return; } l.push(n.value);
+    const c=S.candidates.find(x=>x.id===p.value); if(c && !c.initialActionDate) saveField(p.value,"initialActionDate",todayStr()).then(()=>saveField(p.value,"eventEntries",l)); else saveField(p.value,"eventEntries",l); };
+  const evf=document.getElementById("evFilter"); if(evf) evf.onchange=()=>{ S.eventFilter=evf.value; render(true); };
+
+  // 担当リスト・全体リスト
+  $$("select[data-ov]",app).forEach(s=>s.onchange=()=>{ S[s.dataset.ovKey]={...S[s.dataset.ovKey],[s.dataset.ov]:s.value}; S.ovLimit=200; render(true); });
+  $$("[data-ov-q]",app).forEach(q=>{ const k=q.dataset.ovQ; let t=null, composing=false;
+    const apply=()=>{ clearTimeout(t); if(S[k].q===q.value) return; S[k]={...S[k],q:q.value}; S.ovLimit=200; render(true); };
+    q.addEventListener("compositionstart",()=>{ composing=true; });
+    q.addEventListener("compositionend",()=>{ composing=false; clearTimeout(t); t=setTimeout(apply,300); });
+    q.addEventListener("input",e=>{ if(composing||e.isComposing) return; clearTimeout(t); t=setTimeout(apply,300); });
+    q.addEventListener("keydown",e=>{ if(e.key==="Enter"&&!e.isComposing){ e.preventDefault(); apply(); } }); });
+  $$("[data-ov-prog]",app).forEach(b=>b.onclick=()=>{ const k=b.dataset.ovKey, v=b.dataset.ovProg; S[k]={...S[k],progress:S[k].progress===v?"":v}; S.ovLimit=200; render(true); });
+  $$("[data-ov-clear]",app).forEach(b=>b.onclick=()=>{ S[b.dataset.ovClear]=freshOv(); S.ovLimit=200; render(true); });
+  $$("[data-ov-more]",app).forEach(b=>b.onclick=()=>{ S.ovLimit+=200; render(true); });
+  $$("[data-goto]",app).forEach(el=>{ const go=()=>{ const c=S.candidates.find(x=>x.id===el.dataset.goto); if(!c) return;
+      if(computeStage(c)==="lead"||el.dataset.gotoTab==="lead"||!isIaa(c)){ S.tab="lead"; S.leadQuery=fullName(c)||c.accountName||""; } else { S.tab="mtg"; S.focusRow=c.id; }
+      LS.set("arxcs_tab",S.tab); render(true); };
+    el.onclick=go; el.onkeydown=e=>{ if(e.key==="Enter"){ e.preventDefault(); go(); } }; });
+
+  // ダッシュボード
+  const dm=document.getElementById("dashMonth"); if(dm) dm.onchange=()=>{ S.dashPeriod={ym:dm.value,week:0}; render(true); };
+  const dw=document.getElementById("dashWeek"); if(dw) dw.onchange=()=>{ S.dashPeriod={...S.dashPeriod,week:Number(dw.value)||0}; render(true); };
+
+  // 管理（管理者だけ。画面が出ていても、管理者でなければ何もしない）
+  if(!S.isAdmin) return;
+  $$("[data-admin-sec]",app).forEach(b=>b.onclick=()=>{ S.adminSection=b.dataset.adminSec; render(true); });
+  const adw=document.getElementById("adminDashWho"); if(adw) adw.onchange=()=>{ S.adminDashWho=adw.value; render(true); };
+  $$("[data-mem-name]",app).forEach(el=>el.onchange=async()=>{ const v=el.value.trim(); if(!v) return; try{ await enqueue("m/"+el.dataset.memName,()=>S.db.doc("members/"+el.dataset.memName).update({name:v})); toast("保存しました"); }catch(e){ writeFailed(e); } });
+  $$("[data-mem-active]",app).forEach(el=>el.onchange=async()=>{ try{ await enqueue("m/"+el.dataset.memActive,()=>S.db.doc("members/"+el.dataset.memActive).update({active:el.checked})); }catch(e){ writeFailed(e); } });
+  const amb=document.getElementById("addMemberBtn"); if(amb) amb.onclick=async()=>{ const i=document.getElementById("newMemberName"), n=i.value.trim(); if(!n){ i.focus(); return; } if(await addMember(n)) toast(`${n} さんを追加しました`); };
+  const smb=document.getElementById("saveMasters"); if(smb) smb.onclick=()=>{ const lines=k=>{ const seen=new Set(); return app.querySelector(`[data-master="${k}"]`).value.split("\n").map(s=>s.trim()).filter(s=>s&&!seen.has(s)&&seen.add(s)); };
+    const unis=lines("universities").map(l=>{ const i=l.lastIndexOf(","), j=l.lastIndexOf("，"), k=Math.max(i,j); if(k<0) return {name:l,region:"未設定"}; const r=l.slice(k+1).trim(); return {name:l.slice(0,k).trim(), region:REGION_OPTIONS.includes(r)?r:"未設定"}; });
+    saveMasters({universities:unis, events:lines("events"), clubs:lines("clubs"), routes:lines("routes"), gradYears:lines("gradYears"), proposals:lines("proposals")}); };
+  $$("[data-inv-new]",app).forEach(b=>b.onclick=()=>createInvite(b.dataset.invNew||null));
+  $$("[data-inv-del]",app).forEach(b=>b.onclick=async()=>{ try{ await S.db.doc("invites/"+b.dataset.invDel).delete(); toast("招待リンクを無効にしました"); }catch(e){ writeFailed(e); } });
+  $$("[data-acc-del]",app).forEach(b=>b.onclick=async()=>{ if(b.dataset.confirm!=="1"){ b.dataset.confirm="1"; b.textContent="本当に解除？"; return; } try{ await S.db.doc("accounts/"+b.dataset.accDel).delete(); toast("解除しました"); }catch(e){ writeFailed(e); } });
+  $$("[data-copy]",app).forEach(b=>b.onclick=async()=>{ try{ await navigator.clipboard.writeText(b.dataset.copy); toast("コピーしました"); }catch(e){ const i=b.parentElement.querySelector("input"); if(i){ i.select(); } toast("リンクを選択しました。⌘C（Ctrl+C）でコピーしてください",4000); } });
+  $$("[data-select-all]",app).forEach(i=>i.onfocus=()=>i.select());
+  $$("[data-act-as]",app).forEach(b=>b.onclick=()=>{ S.actingAs=b.dataset.actAs; S.me=b.dataset.actAs; S.tab="dash"; render(true); });
+  const imf=document.getElementById("importFile"); if(imf) imf.onchange=async()=>{ const file=imf.files[0]; if(!file) return;
+    try{ const d=JSON.parse(await file.text()); if(d.format!=="arxcs-migration-v1"||!Array.isArray(d.candidates)||!Array.isArray(d.members)) throw new Error("形式が違います");
+      S.importFile=d; S.importState=null; render(true); }catch(e){ toast("移行ファイルを読み込めませんでした（"+e.message+"）",6000); } };
+  const ipa=document.getElementById("importPaste"); if(ipa) ipa.addEventListener("paste",e=>{ const t=(e.clipboardData||window.clipboardData).getData("text"); if(!t) return; e.preventDefault();
+    try{ const d=JSON.parse(t); if(d.format!=="arxcs-migration-v1"||!Array.isArray(d.candidates)||!Array.isArray(d.members)) throw new Error("形式が違います"); S.importFile=d; S.importState=null; render(true); }catch(err){ toast("移行データを読み込めませんでした（"+err.message+"）",6000); } });
+  const rib=document.getElementById("runImport"); if(rib) rib.onclick=runImport;
+  const sab=document.getElementById("saveAlert"); if(sab) sab.onclick=()=>{ const v=k=>{ const n=Math.round(Number(app.querySelector(`[data-alert="${CSS.escape(k)}"]`).value)); return n>=1&&n<=365?n:10; };
+    saveMasters({alert:{default:v("default"), contact:v("contact"), byStatus:Object.fromEntries(ALERT_STATUSES.map(st=>[st,v("s:"+st)]))}}); };
+}
+function toggleSort(cur, key){ const c=cur||{}; const ck=c.key||"registered", cd=c.key?c.dir:"asc"; return {key, dir: ck===key&&cd==="asc"?"desc":"asc"}; }
+
+/* ================== 起動：Firebase ================== */
+// Firestoreを、管理画面のコードと同じ形（doc/collection/set/update/onSnapshot）で使うための薄いラッパー。
+// 書き込むたびに updatedAt にサーバー時刻を入れる（見込み顧客の「変更分だけ読む」同期に使う）。
+function makeDb(fs){
+  const wrap = d => ({ id:d.id, exists:d.exists(), data:()=>d.exists()?d.data({serverTimestamps:"estimate"}):undefined, metadata:d.metadata });
+  const stamp = d => ({ ...d, updatedAt: serverTimestamp() });
+  const docRef = p => { const r=fdoc(fs,p); return {
+    id:r.id, path:p,
+    get: async()=>wrap(await getDoc(r)),
+    set: d=>setDoc(r, stamp(d)),
+    update: d=>updateDoc(r, stamp(d)),
+    delete: ()=>deleteDoc(r),
+    onSnapshot: (n,e)=>fsnap(r, s=>n(wrap(s)), e)
+  }; };
+  const colRef = p => ({
+    path:p,
+    doc: id => id ? docRef(p+"/"+id) : docRef(fdoc(fcol(fs,p)).path),
+    add: async d => { const r=await addDoc(fcol(fs,p), stamp(d)); return docRef(r.path); },
+    onSnapshot: (n,e)=>fsnap(fcol(fs,p), s=>n({docs:s.docs.map(wrap), metadata:s.metadata}), e)
+  });
+  return { doc:docRef, collection:colRef, fs };
+}
+let dataStarted=false;
+// メンバー（または管理者）になってから、チームのデータを読み始める
+function startData(){
+  if(dataStarted) return; dataStarted=true;
+  const db=S.db, fs=db.fs;
+  const fail=e=>{ console.error(e); if(e && e.code==="permission-denied") return; toast("データの取得に失敗しました"+errText(e),6000); };
+  db.collection("members").onSnapshot(snap=>{ S.members=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.order??0)-(b.order??0)); render(); }, e=>{ S.members=[]; fail(e); render(); });
+  db.collection("apoGoals").onSnapshot(snap=>{ const o={}; snap.docs.forEach(d=>{ o[d.id]=d.data(); }); S.apoAll=o; render(); }, fail);
+  db.doc("settings/masters").onSnapshot(snap=>{ const d=snap.exists?snap.data():null;
+    S.masters=d?{...DEFAULT_MASTERS,...d,universities:Array.isArray(d.universities)?d.universities.map(u=>typeof u==="string"?{name:u,region:"未設定"}:u):[],alert:{...DEFAULT_MASTERS.alert,...(d.alert||{})}}:null; render(); }, fail);
+  // 見込み顧客：前回この端末に保存した分をすぐ表示し、サーバーからは「前回以降に変わった分」だけを読む（無料枠の読み込み回数を節約）
+  (async()=>{
+    const col=fcol(fs,"candidates"); const cmap=new Map(); let maxMs=0;
+    const absorb=(id,data)=>{ cmap.set(id,{...data,id}); const t=data.updatedAt&&data.updatedAt.toMillis?data.updatedAt.toMillis():0; if(t>maxMs) maxMs=t; };
+    const publish=()=>{ S.candidates=[...cmap.values()].filter(c=>!c.deleted); render(); };
+    S.absorbLocal=(id,data)=>{ const {updatedAt,...rest}=data; const prev=cmap.get(id)||{}; cmap.set(id,{...prev,...rest,id}); };
+    try{ const cs=await getDocsFromCache(col); cs.forEach(d=>absorb(d.id,d.data({serverTimestamps:"estimate"}))); if(cs.size) publish(); }catch(e){}
+    const since=Timestamp.fromMillis(Math.max(0,maxMs-2*60*1000));
+    fsnap(query(col, where("updatedAt",">",since)), snap=>{
+      snap.docChanges().forEach(ch=>{ if(ch.type!=="removed") absorb(ch.doc.id, ch.doc.data({serverTimestamps:"estimate"})); });
+      S.stale=false; publish();
+    }, fail);
+  })();
+  if(S.isAdmin){
+    db.collection("accounts").onSnapshot(snap=>{ S.accounts=snap.docs.map(d=>({id:d.id,...d.data()})); render(); }, fail);
+    db.collection("invites").onSnapshot(snap=>{ S.invites=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.createdAt||"").localeCompare(b.createdAt||"")); render(); }, fail);
+  }
+}
+(async function start(){
+  render(true);
+  if(!firebaseConfig || !firebaseConfig.apiKey){ S.dbState="config"; render(true); return; }
+  const app=initializeApp(firebaseConfig);
+  const auth=getAuth(app);
+  let fs;
+  try{ fs=initializeFirestore(app,{ localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) }); }
+  catch(e){ fs=initializeFirestore(app,{}); }
+  S.db=makeDb(fs);
+  // この端末用の匿名ログイン（一度ログインすると、ブラウザに保存されて次回から自動でログインする）
+  const user = await new Promise(resolve=>{
+    let tried=false;
+    onAuthStateChanged(auth, u=>{ if(u) resolve(u); else if(!tried){ tried=true; signInAnonymously(auth).catch(e=>{ S.dbState="authfail"; S.authErr=e.code; render(true); resolve(null); }); } });
+  });
+  if(!user) return;
+  S.uid=user.uid;
+  const hm=/^#invite-([a-z0-9]{6,40})$/.exec(location.hash||""); if(hm) S.inviteCode=hm[1];
+  try{ const a=await S.db.doc("admins/"+S.uid).get(); S.isAdmin=a.exists; }catch(e){ S.isAdmin=false; }
+  S.db.doc("accounts/"+S.uid).onSnapshot(snap=>{
+    S.account=snap.exists?snap.data():null;
+    if(S.account){ if(!S.actingAs) S.me=S.account.memberId; S.inviteCode=null; startData(); }
+    else if(!S.actingAs) S.me=null;
+    if(S.isAdmin) startData();
+    S.dbState="ready"; render();
+  }, e=>{ S.account=null; S.dbState="ready"; render(); });
+  if(S.inviteCode) S.db.doc("invites/"+S.inviteCode).get().then(sn=>{ S.invite=sn.exists?sn.data():null; render(true); }).catch(()=>{ S.invite=null; render(true); });
+  window.addEventListener("hashchange",()=>{ const m=/^#invite-([a-z0-9]{6,40})$/.exec(location.hash||""); if(m && !S.account){ S.inviteCode=m[1]; S.invite=undefined; render(true); S.db.doc("invites/"+m[1]).get().then(sn=>{ S.invite=sn.exists?sn.data():null; render(true); }).catch(()=>{ S.invite=null; render(true); }); } });
+})();
+</script>
+</body>
+</html>

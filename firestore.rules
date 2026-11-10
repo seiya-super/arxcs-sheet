@@ -1,0 +1,63 @@
+rules_version = '2';
+// Arxcs 個人シート：Firestore セキュリティルール
+// ・招待リンクで登録した人（accounts）と管理者（admins）だけがデータを読み書きできる
+// ・メンバー一覧・マスタ・招待・アカウント管理は管理者だけが変更できる
+// ・管理者になるには、アプリの「管理者の方はこちら」で下の設定キーを入力する
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function isAdmin() { return signedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)); }
+    function isMember() { return signedIn() && exists(/databases/$(database)/documents/accounts/$(request.auth.uid)); }
+    function canUse() { return isMember() || isAdmin(); }
+    function inviteOf(code) { return get(/databases/$(database)/documents/invites/$(code)).data; }
+    function inviteExists(code) { return code is string && exists(/databases/$(database)/documents/invites/$(code)); }
+
+    match /admins/{uid} {
+      allow get: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow list: if isAdmin();
+      allow create: if signedIn() && request.auth.uid == uid && request.resource.data.setupKey == "SETUP_KEY_HERE";
+      allow update, delete: if isAdmin();
+    }
+
+    match /invites/{code} {
+      allow get: if signedIn();
+      allow list, write: if isAdmin();
+    }
+
+    match /accounts/{uid} {
+      allow get: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow list: if isAdmin();
+      allow create: if signedIn() && request.auth.uid == uid && (
+        isAdmin() ||
+        (inviteExists(request.resource.data.invite) && (
+          (inviteOf(request.resource.data.invite).memberId == null && request.resource.data.memberId == uid) ||
+          (inviteOf(request.resource.data.invite).memberId != null && request.resource.data.memberId == inviteOf(request.resource.data.invite).memberId)
+        ))
+      );
+      allow update, delete: if isAdmin();
+    }
+
+    match /members/{id} {
+      allow read: if canUse();
+      allow create: if isAdmin() || (
+        signedIn() && id == request.auth.uid &&
+        inviteExists(request.resource.data.joinedVia) &&
+        inviteOf(request.resource.data.joinedVia).memberId == null
+      );
+      allow update, delete: if isAdmin();
+    }
+
+    match /candidates/{id} {
+      allow read, write: if canUse();
+    }
+
+    match /apoGoals/{id} {
+      allow read, write: if canUse();
+    }
+
+    match /settings/{id} {
+      allow read: if canUse();
+      allow write: if isAdmin();
+    }
+  }
+}
