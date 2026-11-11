@@ -235,7 +235,7 @@ tr.clickable{cursor:pointer}tr.clickable:hover td{background:#f7f7f9}
 .admin-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px}
 .admin-sub{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
 textarea.inp{min-height:180px;font-size:12px;line-height:1.6}
-.mrow{display:grid;grid-template-columns:1fr auto auto;gap:6px;align-items:center;margin-bottom:6px}
+.mrow{display:grid;grid-template-columns:1fr auto auto auto;gap:8px;align-items:center;margin-bottom:6px}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:24px;z-index:60;background:var(--ink);color:#fff;font-size:12px;font-weight:700;padding:10px 18px;border-radius:999px;box-shadow:0 8px 24px rgba(0,0,0,.25);max-width:90vw}
 .loading{min-height:60vh;display:grid;place-items:center;color:var(--sub);font-size:13px}
 </style>
@@ -261,6 +261,8 @@ const DEFAULT_MASTERS = {
 const ALERT_STATUSES = ["面談1回目","面談2回目","面談3回目","①A2基準達成","②DML動画配布","③提案","④提案日","⑤参加"];
 const YEAR_OPTIONS = [2024,2025,2026,2027,2028,2029,2030];
 const APO_MAX = 15;
+// 個人シートにログインしたまま「管理」も使える担当者（管理画面の「メンバー」で変更できる。最初の値）
+const DEFAULT_ADMIN_MEMBERS = ["shiromizu","matsuoka"];
 const TABS = [
   {id:"dash",label:"ダッシュボード"},{id:"apo",label:"アポ目標"},{id:"lead",label:"見込み顧客"},
   {id:"mtg",label:"IAA"},{id:"event",label:"イベント"},{id:"overview",label:"担当リスト"},{id:"all",label:"全体リスト"},{id:"admin",label:"管理",admin:true}
@@ -458,7 +460,7 @@ function renderLogin(){
       <div style="margin-top:10px"><button class="btn" id="setupBtn">管理者としてログイン</button></div></details>`);
 }
 async function becomeAdmin(key){
-  try{ await S.db.doc("admins/"+S.uid).set({setupKey:key, at:new Date().toISOString()}); S.isAdmin=true; startData(); toast("管理者として登録しました"); render(true); }
+  try{ await S.db.doc("admins/"+S.uid).set({setupKey:key, at:new Date().toISOString()}); S.passwordAdmin=true; updateAdmin(); startData(); toast("管理者として登録しました"); render(true); }
   catch(e){ toast("管理者パスワードが正しくありません",5000); }
 }
 async function registerFromInvite(name, email){
@@ -865,9 +867,9 @@ function renderAdmin(){
   else if(sec==="members"){
     const ms=(S.members||[]).slice().sort((a,b)=>(a.order??0)-(b.order??0));
     body=`<div class="admin-grid"><section class="dcard"><h3>メンバー一覧</h3>${ms.map(m=>{ const n=S.candidates.filter(c=>c.ownerUid===m.id).length;
-      return `<div class="mrow"><input class="inp" data-mem-name="${esc(m.id)}" value="${esc(m.name)}"/><label class="note" style="white-space:nowrap"><input type="checkbox" data-mem-active="${esc(m.id)}"${m.active!==false?" checked":""}/> ログイン一覧に表示</label><span class="note" style="white-space:nowrap">${n}件</span></div>`; }).join("")||'<div class="note">まだいません</div>'}
+      return `<div class="mrow"><input class="inp" data-mem-name="${esc(m.id)}" value="${esc(m.name)}"/><label class="note" style="white-space:nowrap"><input type="checkbox" data-mem-active="${esc(m.id)}"${m.active!==false?" checked":""}/> ログイン一覧に表示</label><label class="note" style="white-space:nowrap"><input type="checkbox" data-mem-admin="${esc(m.id)}"${(S.roles||[]).includes(m.id)?" checked":""}/> 管理者</label><span class="note" style="white-space:nowrap">${n}件</span></div>`; }).join("")||'<div class="note">まだいません</div>'}
       <div class="mrow" style="margin-top:12px"><input class="inp" id="newMemberName" placeholder="新しいメンバーの名前"/><button class="btn primary" id="addMemberBtn">追加</button><span></span></div>
-      <p class="note">名前を変えると、ログイン画面と一覧の表示が変わります。辞めた人は「ログイン一覧に表示」を外してください（担当していた案件のデータは残ります）。</p></section></div>`;
+      <p class="note">名前を変えると、ログイン画面と一覧の表示が変わります。辞めた人は「ログイン一覧に表示」を外してください（担当していた案件のデータは残ります）。<br>「管理者」にチェックを入れた担当者は、自分のシートにログインしたまま「管理」タブを使えます。</p></section></div>`;
   }
   else if(sec==="masters"){
     const m=M(), ta=(k,l,v,hint)=>`<section class="dcard"><h3>${l}</h3><textarea class="inp" data-master="${k}">${esc(v)}</textarea><p class="note">${hint||"1行に1つずつ入力します。"}</p></section>`;
@@ -1141,6 +1143,10 @@ function bindApp(){
   $$("[data-admin-sec]",app).forEach(b=>b.onclick=()=>{ S.adminSection=b.dataset.adminSec; render(true); });
   const adw=document.getElementById("adminDashWho"); if(adw) adw.onchange=()=>{ S.adminDashWho=adw.value; render(true); };
   $$("[data-mem-name]",app).forEach(el=>el.onchange=async()=>{ const v=el.value.trim(); if(!v) return; try{ await enqueue("m/"+el.dataset.memName,()=>S.db.doc("members/"+el.dataset.memName).update({name:v})); toast("保存しました"); }catch(e){ writeFailed(e); } });
+  $$("[data-mem-admin]",app).forEach(el=>el.onchange=async()=>{ const id=el.dataset.memAdmin; const cur=new Set(S.roles||[]); if(el.checked) cur.add(id); else cur.delete(id);
+    if(!cur.size){ el.checked=true; toast("管理者を0人にはできません"); return; }
+    if(!el.checked && S.account && id===S.account.memberId && !S.passwordAdmin){ if(el.dataset.confirm!=="1"){ el.checked=true; el.dataset.confirm="1"; toast("自分を管理者から外すと「管理」が使えなくなります。もう一度押すと外します",6000); return; } }
+    try{ await enqueue("roles",()=>S.db.doc("settings/roles").set({adminMembers:[...cur]})); toast("保存しました"); }catch(e){ writeFailed(e); } });
   $$("[data-mem-active]",app).forEach(el=>el.onchange=async()=>{ try{ await enqueue("m/"+el.dataset.memActive,()=>S.db.doc("members/"+el.dataset.memActive).update({active:el.checked})); }catch(e){ writeFailed(e); } });
   const amb=document.getElementById("addMemberBtn"); if(amb) amb.onclick=async()=>{ const i=document.getElementById("newMemberName"), n=i.value.trim(); if(!n){ i.focus(); return; } if(await addMember(n)) toast(`${n} さんを追加しました`); };
   const smb=document.getElementById("saveMasters"); if(smb) smb.onclick=()=>{ const lines=k=>{ const seen=new Set(); return app.querySelector(`[data-master="${k}"]`).value.split("\n").map(s=>s.trim()).filter(s=>s&&!seen.has(s)&&seen.add(s)); };
@@ -1219,10 +1225,26 @@ function startData(){
       S.stale=false; publish();
     }, fail);
   })();
-  if(S.isAdmin){
-    db.collection("accounts").onSnapshot(snap=>{ S.accounts=snap.docs.map(d=>({id:d.id,...d.data()})); render(); }, fail);
-    db.collection("invites").onSnapshot(snap=>{ S.invites=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.createdAt||"").localeCompare(b.createdAt||"")); render(); }, fail);
-  }
+  // 管理者にする担当者の一覧（settings/roles）
+  db.doc("settings/roles").onSnapshot(snap=>{
+    S.roles = snap.exists ? (snap.data().adminMembers||[]) : null;
+    if(S.roles===null && S.passwordAdmin){ db.doc("settings/roles").set({adminMembers:DEFAULT_ADMIN_MEMBERS}).catch(()=>{}); }
+    updateAdmin(); render();
+  }, e=>{ S.roles=null; updateAdmin(); render(); });
+  if(S.isAdmin) startAdminData();
+}
+let adminStarted=false;
+function startAdminData(){
+  if(adminStarted) return; adminStarted=true;
+  const db=S.db, fail=e=>console.error(e);
+  db.collection("accounts").onSnapshot(snap=>{ S.accounts=snap.docs.map(d=>({id:d.id,...d.data()})); render(); }, fail);
+  db.collection("invites").onSnapshot(snap=>{ S.invites=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.createdAt||"").localeCompare(b.createdAt||"")); render(); }, fail);
+}
+// 管理者かどうか：管理者パスワードで登録した人、または「管理者にする担当者」に入っている担当者のシートでログインしている人
+function updateAdmin(){
+  const roleAdmin = !!(S.account && Array.isArray(S.roles) && S.roles.includes(S.account.memberId));
+  S.isAdmin = !!(S.passwordAdmin || roleAdmin);
+  if(S.isAdmin && dataStarted) startAdminData();
 }
 (async function start(){
   render(true);
@@ -1242,11 +1264,13 @@ function startData(){
     const un=onAuthStateChanged(auth, u=>{ if(u){ un(); resolve(u); } else { S.dbState="signin"; render(true); } });
   });
   S.uid=user.uid; S.email=user.email||""; S.displayName=user.displayName||""; S.dbState="loading"; render(true);
-  try{ const a=await S.db.doc("admins/"+S.uid).get(); S.isAdmin=a.exists; }catch(e){ S.isAdmin=false; }
+  try{ const a=await S.db.doc("admins/"+S.uid).get(); S.passwordAdmin=a.exists; }catch(e){ S.passwordAdmin=false; }
+  updateAdmin();
   S.db.doc("accounts/"+S.uid).onSnapshot(snap=>{
     S.account=snap.exists?snap.data():null;
     if(S.account){ if(!S.actingAs) S.me=S.account.memberId; S.inviteCode=null; try{ sessionStorage.removeItem("arxcs_invite"); }catch(e){} startData(); }
     else if(!S.actingAs) S.me=null;
+    updateAdmin();
     if(S.isAdmin) startData();
     S.dbState="ready"; render();
   }, e=>{ S.account=null; S.dbState="ready"; render(); });

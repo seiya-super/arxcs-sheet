@@ -3,10 +3,11 @@ rules_version = '2';
 // ・招待リンクで登録した人（accounts）と管理者（admins）だけがデータを読み書きできる
 // ・メンバー一覧・マスタ・招待・アカウント管理は管理者だけが変更できる
 // ・管理者になるには、アプリの「管理者の方はこちら」で下の管理者パスワードを入力する
+// ・settings/roles の adminMembers に入っている担当者のシートでログインした人も管理者になる
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
-    function isAdmin() { return signedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)); }
+    function isAdmin() { return signedIn() && (exists(/databases/$(database)/documents/admins/$(request.auth.uid)) || (exists(/databases/$(database)/documents/accounts/$(request.auth.uid)) && exists(/databases/$(database)/documents/settings/roles) && get(/databases/$(database)/documents/accounts/$(request.auth.uid)).data.memberId in get(/databases/$(database)/documents/settings/roles).data.adminMembers)); }
     function isMember() { return signedIn() && exists(/databases/$(database)/documents/accounts/$(request.auth.uid)); }
     function canUse() { return isMember() || isAdmin(); }
     function inviteOf(code) { return get(/databases/$(database)/documents/invites/$(code)).data; }
