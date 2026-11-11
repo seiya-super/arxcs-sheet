@@ -454,12 +454,12 @@ function renderLogin(){
     <p class="note" style="margin:0">このアプリを使うには、管理者から届いた招待リンクを開いて登録します。（ログイン中：${esc(S.email||"")}）</p>
     <div style="margin-top:10px"><button class="btn sm" id="signOutBtn">別のGoogleアカウントでログインする</button></div>
     <details style="margin-top:16px"><summary class="note" style="cursor:pointer">管理者の方はこちら</summary>
-      <label class="lbl" for="setupKey" style="margin-top:10px">管理者用の設定キー</label><input class="inp" id="setupKey" autocomplete="off"/>
-      <div style="margin-top:10px"><button class="btn" id="setupBtn">管理者として登録</button></div></details>`);
+      <label class="lbl" for="setupKey" style="margin-top:10px">管理者パスワード</label><input class="inp" id="setupKey" type="password" autocomplete="off"/>
+      <div style="margin-top:10px"><button class="btn" id="setupBtn">管理者としてログイン</button></div></details>`);
 }
 async function becomeAdmin(key){
   try{ await S.db.doc("admins/"+S.uid).set({setupKey:key, at:new Date().toISOString()}); S.isAdmin=true; startData(); toast("管理者として登録しました"); render(true); }
-  catch(e){ toast("設定キーが正しくありません",5000); }
+  catch(e){ toast("管理者パスワードが正しくありません",5000); }
 }
 async function registerFromInvite(name, email){
   if(S.regBusy) return; S.regBusy=true; render(true);
@@ -1038,6 +1038,7 @@ function bindLogin(){
   if(so) so.onclick=doSignOut;
   const sb=document.getElementById("setupBtn");
   if(sb) sb.onclick=()=>{ const k=document.getElementById("setupKey").value.trim(); if(k) becomeAdmin(k); };
+  const sk=document.getElementById("setupKey"); if(sk) sk.onkeydown=e=>{ if(e.key==="Enter"&&!e.isComposing){ e.preventDefault(); const k=sk.value.trim(); if(k) becomeAdmin(k); } };
   const aib=document.getElementById("adminImportBtn");
   if(aib) aib.onclick=()=>{ S.me="__admin__"; S.actingAs="__admin__"; S.tab="admin"; S.adminSection="import"; render(true); };
   const bb=document.getElementById("bindBtn");

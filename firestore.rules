@@ -2,7 +2,7 @@ rules_version = '2';
 // Arxcs 個人シート：Firestore セキュリティルール
 // ・招待リンクで登録した人（accounts）と管理者（admins）だけがデータを読み書きできる
 // ・メンバー一覧・マスタ・招待・アカウント管理は管理者だけが変更できる
-// ・管理者になるには、アプリの「管理者の方はこちら」で下の設定キーを入力する
+// ・管理者になるには、アプリの「管理者の方はこちら」で下の管理者パスワードを入力する
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
