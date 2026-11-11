@@ -150,6 +150,27 @@ table.t tr:last-child td{border-bottom:none}
 .declined-cell .cell{background:#f3f4f6}
 tr.row-⑥入会 td{background:#f4fbf6}tr.row-⑦見送り td{background:#f8f8f8;color:#8a8f98}
 
+/* IAA：コンパクトな行・名前は横1行で左に固定 */
+.iaa-t td{padding:3px 4px}
+.iaa-t .cell{padding:4px 6px;font-size:12px;height:28px}
+.iaa-t .cell[type=date]{min-width:118px;width:118px}
+.iaa-t .cell.w-memo{min-width:140px}
+.iaa-t .cell.w-s{min-width:96px}
+.iaa-t .stk0{position:sticky;left:0;z-index:2;background:#fff;width:34px;min-width:34px;max-width:34px}
+.iaa-t .stk1{position:sticky;left:34px;z-index:2;background:#fff;box-shadow:1px 0 0 var(--line)}
+.iaa-t th.stk0,.iaa-t th.stk1{z-index:3;background:#fafafa}
+.pline{min-width:150px;max-width:230px}
+.pl1{white-space:nowrap;display:flex;align-items:baseline;gap:6px}
+.pn{font-weight:900;font-size:13px}
+.pf{font-size:10px;color:var(--sub)}
+.pm{font-size:10px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.prog{display:flex;align-items:center;gap:6px;white-space:nowrap}
+@media (max-width:760px){ .pline{min-width:110px;max-width:130px} .pl1{flex-direction:column;align-items:flex-start;gap:0} .pf{display:none} }
+.pd{font-size:10px;color:var(--sub)}
+.iaa-t .na-box{padding:3px 6px}
+.iaa-t .na-input{padding:3px 6px}
+.iaa-t .na-history{margin-top:3px;flex-wrap:nowrap;white-space:nowrap}
+.iaa-t .na-wrap{flex-wrap:nowrap;white-space:nowrap}
 /* step input */
 .na-wrap{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .na-box{display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--c,#ddd);border-radius:12px;padding:5px 8px;background:#fff}
@@ -373,6 +394,12 @@ function cell(id, field, value, type, cls, list){
   return `<input class="cell ${cls||""}" data-id="${id}" data-field="${field}" type="${type||"text"}"${list?` list="${list}"`:""} value="${esc(value)}"${ro}/>`;
 }
 const pill = st => st ? `<span class="pill s-${esc(st)}">${esc(st)}</span>` : `<span class="pill">—</span>`;
+// IAA用：名前・ふりがなを横1行、大学などをその下に1行（はみ出す分は「…」）
+function profileLine(c){
+  const meta=[c.university,c.gradYear,c.club].filter(Boolean).join("・");
+  return `<div class="pline"><div class="pl1"><span class="pn">${esc(fullName(c)||c.accountName||"（名前未入力）")}</span>${fullFuri(c)?`<span class="pf">${esc(fullFuri(c))}</span>`:""}</div>${meta?`<div class="pm" title="${esc(meta)}">${esc(meta)}</div>`:""}</div>`;
+}
+function progressLine(c, st){ return `<div class="prog">${pill(st)}<span class="pd">${md(latestActionDate(c))||"—"}</span></div>`; }
 function profileCell(c){
   return `<div class="profile"><div class="n">${esc(fullName(c)||c.accountName||"（名前未入力）")}</div><div class="f">${esc(fullFuri(c))}</div><div class="m">${esc([c.university,c.gradYear,c.club].filter(Boolean).join("・"))}</div></div>`;
 }
@@ -656,13 +683,13 @@ function bindFurigana(nameEl, furiEl, onUpdate){
 const STEP_LIST_FIELDS=["interview1","interview2","interview3","a2","dml","proposal","proposalDate","participationDate","enrolled"];
 function renderMtgList(list){
   const rows=list.map((c,i)=>{ const st=computeStatus(c);
-    return `<tr class="row-${esc(st)}" data-row="${c.id}"><td class="num">${i+1}</td><td>${profileCell(c)}</td><td>${pill(st)}<div class="profile"><div class="m">最新 ${slash(latestActionDate(c))||"—"}</div></div></td>
+    return `<tr class="row-${esc(st)}" data-row="${c.id}"><td class="num stk0">${i+1}</td><td class="stk1">${profileLine(c)}</td><td>${progressLine(c,st)}</td>
       ${STEP_LIST_FIELDS.map(f=>`<td class="step-cell${c[f]?" filled":""}" style="--c:var(--s-${f})">${f==="proposal"?cell(c.id,f,c[f],"text","w-s","propList"):cell(c.id,f,c[f],"date")}</td>`).join("")}
       <td class="declined-cell">${cell(c.id,"declined",c.declined,"date")}</td>
-      <td><div class="stack"><label>メモ${cell(c.id,"memo",c.memo,"text","w-memo")}</label><label>議事録${cell(c.id,"minutes",c.minutes,"text","w-memo")}</label></div></td></tr>`; }).join("")
-    || `<tr class="empty-row"><td colspan="14">面談中の候補者はいません。見込み顧客の「IAA」列に面談1回目の日付を入れると、ここに表示されます。</td></tr>`;
-  const H=["No","名前","進捗",...STEP_LIST_FIELDS.map(f=>STEP_BY[f].label),"⑦見送り","メモ / 議事録"];
-  return `<div class="scrollx"><table class="t"><tr>${H.map((h,i)=>{ const f=STEP_LIST_FIELDS[i-3]; return `<th${f?` class="step-th" style="--c:var(--s-${f})"`:""}>${h}</th>`; }).join("")}</tr>${rows}</table></div>`;
+      <td>${cell(c.id,"memo",c.memo,"text","w-memo")}</td><td>${cell(c.id,"minutes",c.minutes,"text","w-memo")}</td></tr>`; }).join("")
+    || `<tr class="empty-row"><td colspan="15">面談中の候補者はいません。見込み顧客の「IAA」列に面談1回目の日付を入れると、ここに表示されます。</td></tr>`;
+  const H=["No","名前","進捗",...STEP_LIST_FIELDS.map(f=>STEP_BY[f].label),"⑦見送り","メモ","議事録"];
+  return `<div class="scrollx"><table class="t iaa-t"><tr>${H.map((h,i)=>{ const f=STEP_LIST_FIELDS[i-3]; const cls=[i===0?"stk0":"",i===1?"stk1":"",f?"step-th":""].filter(Boolean).join(" "); return `<th${cls?` class="${cls}"`:""}${f?` style="--c:var(--s-${f})"`:""}>${h}</th>`; }).join("")}</tr>${rows}</table></div>`;
 }
 function optionalInterviews(c){ const o=[]; if(c.interview1&&!c.interview2) o.push("interview2"); if(c.interview2&&!c.interview3) o.push("interview3"); return o; }
 function nextMainField(c){ let l=-1; MAIN_FLOW.forEach((f,i)=>{ if(c[f]) l=i; }); return MAIN_FLOW[l+1]||null; }
@@ -693,12 +720,12 @@ function renderHistory(c){
 }
 function renderMtgStep(list){
   const rows=list.map((c,i)=>{ const st=computeStatus(c);
-    return `<tr class="row-${esc(st)}" data-row="${c.id}"><td class="num">${i+1}</td><td>${profileCell(c)}</td><td>${pill(st)}<div class="profile"><div class="m">最新 ${slash(latestActionDate(c))||"—"}</div></div></td>
-    <td style="min-width:380px">${renderNA(c)}<div class="na-history">${renderHistory(c)}</div></td>
+    return `<tr class="row-${esc(st)}" data-row="${c.id}"><td class="num stk0">${i+1}</td><td class="stk1">${profileLine(c)}</td><td>${progressLine(c,st)}</td>
+    <td style="min-width:420px">${renderNA(c)}<div class="na-history">${renderHistory(c)}</div></td>
     <td class="declined-cell">${cell(c.id,"declined",c.declined,"date")}</td>
-    <td><div class="stack"><label>メモ${cell(c.id,"memo",c.memo,"text","w-memo")}</label><label>議事録${cell(c.id,"minutes",c.minutes,"text","w-memo")}</label></div></td></tr>`; }).join("")
-    || `<tr class="empty-row"><td colspan="6">面談中の候補者はいません</td></tr>`;
-  return `<div class="scrollx"><table class="t"><tr>${["No","名前","進捗","ネクストアクション","⑦見送り","メモ / 議事録"].map(h=>`<th>${h}</th>`).join("")}</tr>${rows}</table></div>`;
+    <td>${cell(c.id,"memo",c.memo,"text","w-memo")}</td><td>${cell(c.id,"minutes",c.minutes,"text","w-memo")}</td></tr>`; }).join("")
+    || `<tr class="empty-row"><td colspan="7">面談中の候補者はいません</td></tr>`;
+  return `<div class="scrollx"><table class="t iaa-t"><tr>${["No","名前","進捗","ネクストアクション","⑦見送り","メモ","議事録"].map((h,i)=>`<th${i===0?' class="stk0"':i===1?' class="stk1"':""}>${h}</th>`).join("")}</tr>${rows}</table></div>`;
 }
 function renderMtg(){
   const list=applySort(mine().filter(isIaa), S.iaaSort);
