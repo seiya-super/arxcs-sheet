@@ -29,7 +29,7 @@ service cloud.firestore {
       allow get: if signedIn() && (request.auth.uid == uid || isAdmin());
       allow list: if isAdmin();
       allow create: if signedIn() && request.auth.uid == uid && (
-        isAdmin() ||
+        isAdmin() || (exists(/databases/$(database)/documents/members/$(request.resource.data.memberId)) && get(/databases/$(database)/documents/members/$(request.resource.data.memberId)).data.get('email', '') == request.auth.token.email && request.auth.token.email_verified == true) ||
         (inviteExists(request.resource.data.invite) && (
           (inviteOf(request.resource.data.invite).memberId == null && request.resource.data.memberId == uid) ||
           (inviteOf(request.resource.data.invite).memberId != null && request.resource.data.memberId == inviteOf(request.resource.data.invite).memberId)
@@ -39,7 +39,7 @@ service cloud.firestore {
     }
 
     match /members/{id} {
-      allow read: if canUse();
+      allow read: if canUse() || (signedIn() && resource.data.email == request.auth.token.email);
       allow create: if isAdmin() || (
         signedIn() && id == request.auth.uid &&
         inviteExists(request.resource.data.joinedVia) &&

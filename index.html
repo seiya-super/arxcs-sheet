@@ -281,7 +281,7 @@ textarea.inp{min-height:180px;font-size:12px;line-height:1.6}
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc as fdoc, collection as fcol, setDoc, updateDoc, deleteDoc, addDoc, getDoc, getDocsFromCache, onSnapshot as fsnap, query, where, serverTimestamp, Timestamp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc as fdoc, collection as fcol, setDoc, updateDoc, deleteDoc, addDoc, getDoc, getDocs, limit, getDocsFromCache, onSnapshot as fsnap, query, where, serverTimestamp, Timestamp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { firebaseConfig } from "./config.js";
 /* ================== マスタ（初期値） ================== */
 const REGION_OPTIONS = ["北海道","東北","関東","中部","近畿","中国","四国","九州・沖縄","海外","未設定"];
@@ -522,7 +522,7 @@ function renderLogin(){
   if(S.dbState==="signin") return gateCard(`<div style="font-weight:900;font-size:15px;margin-bottom:6px">${S.inviteCode?"チームに参加する":"ログイン"}</div>
     <p class="note" style="margin:0 0 14px">${S.inviteCode?"招待リンクから参加します。まずGoogleアカウントでログインしてください。":"Googleアカウントでログインしてください。一度ログインした端末では、次回から自動でログインします。"}</p>
     <button class="btn primary" id="googleBtn" style="padding:9px 18px;font-size:13px" ${S.signingIn?"disabled":""}>${S.signingIn?"ログイン中…":"Googleでログイン"}</button>
-    ${S.authErr?`<div class="banner err" style="margin-top:12px">ログインできませんでした（${esc(S.authErr)}）。</div>`:""}`);
+    ${S.authErr?`<div class="banner err" style="margin-top:12px">ログインできませんでした：${esc(S.authErr)}</div>`:""}`);
   if(S.dbState==="authfail") return gateCard(`<div class="banner err">ログインの準備に失敗しました（${esc(S.authErr||"")}）。通信状態を確認して、ページを開き直してください。</div>`);
   if(S.dbState!=="ready" || S.account===undefined || (S.account && S.members===null) || (S.isAdmin && S.members===null)) return gateCard(`<div class="note">読み込み中…</div>`);
   if(S.inviteCode && !S.account){
@@ -544,7 +544,7 @@ function renderLogin(){
       <div style="margin-top:14px"><button class="btn primary" id="bindBtn">このシートで開く</button></div>`:`<button class="btn primary" id="adminImportBtn">データ移行の画面を開く</button>`}`);
   }
   return gateCard(`<div style="font-weight:900;font-size:15px;margin-bottom:6px">招待リンクから参加してください</div>
-    <p class="note" style="margin:0">このアプリを使うには、管理者から届いた招待リンクを開いて登録します。（ログイン中：${esc(S.email||"")}）</p>
+    <p class="note" style="margin:0">このGoogleアカウント（<b>${esc(S.email||"")}</b>）は、まだどの担当者のシートにもつながっていません。管理者から届いた招待リンクを開くか、管理者にこのメールアドレスを登録してもらってください。別のGoogleアカウントで登録した場合は、下のボタンからログインし直してください。</p>
     <div style="margin-top:10px"><button class="btn sm" id="signOutBtn">別のGoogleアカウントでログインする</button></div>
     <details style="margin-top:16px"><summary class="note" style="cursor:pointer">管理者の方はこちら</summary>
       <label class="lbl" for="setupKey" style="margin-top:10px">管理者パスワード</label><input class="inp" id="setupKey" type="password" autocomplete="off"/>
@@ -1101,6 +1101,7 @@ function renderInvites(){
   const ms=(S.members||[]).filter(m=>m.active!==false);
   const rows=ms.map(m=>{ const acc=accByMember[m.id]||[], inv=invByMember[m.id]||[];
     return `<tr><td style="font-weight:700;white-space:nowrap">${esc(m.name)}</td>
+      <td><input class="inp" type="email" data-mem-email="${esc(m.id)}" value="${esc(m.email||"")}" placeholder="例：taro@gmail.com" style="min-width:220px;font-size:12px"/></td>
       <td>${acc.length?acc.map(a=>`<div><span class="badge" style="background:#dcfce7;color:#166534">登録済み</span> ${esc(a.name)}　${esc(a.email||"")}　<button class="btn sm" data-acc-del="${esc(a.id)}" title="このアカウントとシートのつながりを解除">解除</button></div>`).join(""):`<span class="badge">未登録</span>`}</td>
       <td style="min-width:360px">${inv.map(i=>linkBox(i.id)).join("")}${inv.length?"":`<button class="btn sm" data-inv-new="${esc(m.id)}">招待リンクを作成</button>`}</td>
       <td><button class="btn sm" data-act-as="${esc(m.id)}">このシートを開く</button></td></tr>`; }).join("");
@@ -1110,8 +1111,8 @@ function renderInvites(){
       <p class="note">このリンクを開いた人は、メールアドレスと名前を入力すると新しいメンバーとして登録され、自分のシートで使い始められます。次回からは自動でログインします。</p>
       ${generic.map(i=>linkBox(i.id)).join("")}<div style="margin-top:8px"><button class="btn primary" data-inv-new="">新規メンバー用の招待リンクを作成</button></div>
       <p class="note" style="margin-top:8px">招待リンクは、LINEやメールでそのまま送れます。登録した端末では、次回から自動でログインします。</p></section>
-    <section class="dcard"><h3>今いるメンバーの招待</h3><p class="note">今いるメンバーには、その人専用の招待リンクを送ってください。登録すると、これまでの見込み顧客がそのまま引き継がれます。</p>
-      <div class="scrollx" style="max-height:none"><table class="t"><tr><th>担当者</th><th>アカウント</th><th>招待リンク</th><th></th></tr>${rows}</table></div>
+    <section class="dcard"><h3>今いるメンバーの招待</h3><p class="note">方法は2つあります。<b>①「Googleアカウント（メール）」にその人のGmailなどを入れておく</b>と、その人がアプリを開いてそのGoogleアカウントでログインするだけで、自動で自分のシートにつながります（招待リンクは不要）。②その人専用の招待リンクを送る方法も使えます。どちらも、これまでの見込み顧客がそのまま引き継がれます。</p>
+      <div class="scrollx" style="max-height:none"><table class="t"><tr><th>担当者</th><th>Googleアカウント（メール）</th><th>アカウント</th><th>招待リンク</th><th></th></tr>${rows}</table></div>
       ${unbound.length?`<p class="note" style="margin-top:8px">シートにつながっていないアカウント：${unbound.map(a=>`${esc(a.name)}（${esc(a.email||"")}） <button class="btn sm" data-acc-del="${esc(a.id)}">削除</button>`).join(" ")}</p>`:""}</section>`;
 }
 async function createInvite(memberId){
@@ -1374,6 +1375,10 @@ function bindApp(){
   const smb=document.getElementById("saveMasters"); if(smb) smb.onclick=()=>{ const lines=k=>{ const seen=new Set(); return app.querySelector(`[data-master="${k}"]`).value.split("\n").map(s=>s.trim()).filter(s=>s&&!seen.has(s)&&seen.add(s)); };
     const unis=lines("universities").map(l=>{ const i=l.lastIndexOf(","), j=l.lastIndexOf("，"), k=Math.max(i,j); if(k<0) return {name:l,region:"未設定"}; const r=l.slice(k+1).trim(); return {name:l.slice(0,k).trim(), region:REGION_OPTIONS.includes(r)?r:"未設定"}; });
     saveMasters({universities:unis, events:lines("events"), clubs:lines("clubs"), routes:lines("routes"), gradYears:lines("gradYears"), proposals:lines("proposals")}); };
+  $$("[data-mem-email]",app).forEach(el=>el.onchange=async()=>{ const v=el.value.trim().toLowerCase();
+    if(v && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)){ toast("メールアドレスの形式を確認してください"); return; }
+    const dup=(S.members||[]).find(m=>m.id!==el.dataset.memEmail && (m.email||"")===v && v); if(dup){ toast(`${dup.name}さんに同じメールアドレスが登録されています`); return; }
+    try{ await enqueue("m/"+el.dataset.memEmail,()=>S.db.doc("members/"+el.dataset.memEmail).update({email:v})); toast(v?"保存しました。このGoogleアカウントでログインすると自動でつながります":"削除しました"); }catch(e){ writeFailed(e); } });
   $$("[data-inv-new]",app).forEach(b=>b.onclick=()=>createInvite(b.dataset.invNew||null));
   $$("[data-inv-del]",app).forEach(b=>b.onclick=async()=>{ try{ await S.db.doc("invites/"+b.dataset.invDel).delete(); toast("招待リンクを無効にしました"); }catch(e){ writeFailed(e); } });
   $$("[data-acc-del]",app).forEach(b=>b.onclick=async()=>{ if(b.dataset.confirm!=="1"){ b.dataset.confirm="1"; b.textContent="本当に解除？"; return; } try{ await S.db.doc("accounts/"+b.dataset.accDel).delete(); toast("解除しました"); }catch(e){ writeFailed(e); } });
@@ -1418,10 +1423,24 @@ async function googleSignIn(){
   S.signingIn=true; S.authErr=null; render(true);
   try{ await signInWithPopup(S.auth, provider); }
   catch(e){
-    if(["auth/popup-blocked","auth/operation-not-supported-in-this-environment","auth/cancelled-popup-request"].includes(e.code)){ try{ await signInWithRedirect(S.auth, provider); return; }catch(e2){ S.authErr=e2.code; } }
-    else if(e.code!=="auth/popup-closed-by-user") S.authErr=e.code;
+    if(e.code==="auth/popup-blocked") S.authErr="ポップアップがブロックされました。もう一度「Googleでログイン」を押してください。続く場合は、ブラウザの設定でこのサイトのポップアップを許可してください";
+    else if(e.code==="auth/popup-closed-by-user"||e.code==="auth/cancelled-popup-request") S.authErr="";
+    else if(e.code==="auth/unauthorized-domain") S.authErr="このサイトがFirebaseで許可されていません（管理者に連絡してください）";
+    else if(e.code==="auth/network-request-failed") S.authErr="通信できませんでした。通信状態を確認して、もう一度お試しください";
+    else S.authErr=e.code||String(e);
   }
   S.signingIn=false; render(true);
+}
+// 管理画面で担当者に登録したGoogleアカウント（メールアドレス）でログインした人は、招待リンクなしで自動的にその担当者のシートにつなげる
+async function linkByEmail(){
+  const email=(S.email||"").trim().toLowerCase(); if(!email || !S.db) return;
+  try{
+    const snap=await getDocs(query(fcol(S.db.fs,"members"), where("email","==",email), limit(1)));
+    if(snap.empty) return;
+    const m=snap.docs[0];
+    await S.db.doc("accounts/"+S.uid).set({memberId:m.id, name:m.data().name||S.displayName||"", email, invite:"email", registeredAt:new Date().toISOString()});
+    toast(`${m.data().name||""}さんのシートにつながりました`);
+  }catch(e){ console.warn("メールでの自動接続はできませんでした", e); }
 }
 async function doSignOut(){ try{ await signOut(S.auth); }catch(e){} try{ sessionStorage.removeItem("arxcs_invite"); }catch(e){} location.replace(location.pathname); }
 let dataStarted=false;
@@ -1459,7 +1478,9 @@ let adminStarted=false;
 function startAdminData(){
   if(adminStarted) return; adminStarted=true;
   const db=S.db, fail=e=>console.error(e);
-  db.collection("accounts").onSnapshot(snap=>{ S.accounts=snap.docs.map(d=>({id:d.id,...d.data()})); render(); }, fail);
+  db.collection("accounts").onSnapshot(snap=>{ S.accounts=snap.docs.map(d=>({id:d.id,...d.data()}));
+    (S.accounts||[]).forEach(a=>{ const m=(S.members||[]).find(x=>x.id===a.memberId); const em=(a.email||"").toLowerCase(); if(m && em && !m.email && !(S.members||[]).some(x=>x.email===em)) db.doc("members/"+m.id).update({email:em}).catch(()=>{}); });
+    render(); }, fail);
   db.collection("invites").onSnapshot(snap=>{ S.invites=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.createdAt||"").localeCompare(b.createdAt||"")); render(); }, fail);
 }
 // 管理者かどうか：管理者パスワードで登録した人、または「管理者にする担当者」に入っている担当者のシートでログインしている人
@@ -1480,7 +1501,7 @@ function updateAdmin(){
   S.auth=auth;
   const hm0=/^#invite-([a-z0-9]{6,40})$/.exec(location.hash||""); if(hm0){ S.inviteCode=hm0[1]; try{ sessionStorage.setItem("arxcs_invite",hm0[1]); }catch(e){} }
   else { try{ const v=sessionStorage.getItem("arxcs_invite"); if(v) S.inviteCode=v; }catch(e){} }
-  try{ await getRedirectResult(auth); }catch(e){ S.authErr=e.code; }
+  try{ await getRedirectResult(auth); }catch(e){ S.authErr=e.code||""; }
   // Googleログイン：一度ログインするとブラウザに保存され、次回から自動でログインする
   const user = await new Promise(resolve=>{
     const un=onAuthStateChanged(auth, u=>{ if(u){ un(); resolve(u); } else { S.dbState="signin"; render(true); } });
@@ -1494,6 +1515,7 @@ function updateAdmin(){
     else if(!S.actingAs) S.me=null;
     updateAdmin();
     if(S.isAdmin) startData();
+    if(!S.account && !S.triedEmailLink){ S.triedEmailLink=true; linkByEmail(); }
     S.dbState="ready"; render();
   }, e=>{ S.account=null; S.dbState="ready"; render(); });
   if(S.inviteCode) S.db.doc("invites/"+S.inviteCode).get().then(sn=>{ S.invite=sn.exists?sn.data():null; render(true); }).catch(()=>{ S.invite=null; render(true); });
