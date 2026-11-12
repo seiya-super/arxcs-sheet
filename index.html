@@ -624,8 +624,8 @@ function renderDraftRow(){
     <td class="stk1">${dInput("name","例：山田 太郎")}</td><td>${dInput("furigana","例：やまだ たろう")}</td>
     <td>${dList("university","uniList","大学を検索")}</td><td>${dList("gradYear","gyList","選択")}</td><td>${dList("club","clubList","選択")}</td><td>${dList("route","routeList","選択")}</td>
     <td>${dInput("accountName","例：@username")}</td><td>${dInput("interview1","","date")}</td><td>${dInput("initialActionDate","","date")}</td><td>${dInput("memo","気になったことがあれば")}</td>
-    <td></td><td></td><td></td><td></td><td colspan="2"><div style="display:flex;gap:4px"><button class="btn primary sm" id="submitLead" ${dis?"disabled":""}>${S.busy?"…":"登録"}</button><button class="btn sm" data-draft-close>✕</button></div></td></tr>
-    <tr class="draft-row"><td></td><td colspan="16" id="dupHolder" style="padding:2px 8px 10px">${ck.html}</td></tr>`;
+    <td></td><td></td><td colspan="2"><div style="display:flex;gap:4px"><button class="btn primary sm" id="submitLead" ${dis?"disabled":""}>${S.busy?"…":"登録"}</button><button class="btn sm" data-draft-close>✕</button></div></td></tr>
+    <tr class="draft-row"><td></td><td colspan="14" id="dupHolder" style="padding:2px 8px 10px">${ck.html}</td></tr>`;
 }
 function renderLeadModal(){
   if(S.draftMode!=="modal" || !S.draft) return "";
@@ -677,8 +677,6 @@ function renderLead(){
       </div><label class="cf"><span>メモ</span>${cell(c.id,"memo",c.memo)}</label>
       <div class="lcard-grid" style="grid-template-columns:1fr">
         <label class="cf"><span>Instagramアカウント</span>${linkCell(c.id,"instagram",c.instagram,"insta","@ユーザー名 / URL")}</label>
-        <label class="cf"><span>マガジン原稿</span>${linkCell(c.id,"magazineUrl",c.magazineUrl,"url")}</label>
-        <label class="cf"><span>議事録</span>${linkCell(c.id,"minutes",c.minutes,"url")}</label>
       </div>
       <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center">${schedChip(c)}${delCell(c)}</div></div>`).join("")}</div>`
       : `<div class="dempty">見込み顧客はまだいません。ゆっくり登録していきましょう。</div>`;
@@ -689,12 +687,12 @@ function renderLead(){
       <td>${cell(c.id,"club",c.club,"text","w-s","clubList")}</td><td>${cell(c.id,"route",c.route,"text","w-s","routeList")}</td>
       <td>${cell(c.id,"accountName",c.accountName,"text","w-name")}</td><td>${cell(c.id,"interview1",c.interview1,"date")}</td><td>${cell(c.id,"initialActionDate",c.initialActionDate,"date")}</td>
       <td>${cell(c.id,"memo",c.memo,"text","w-memo")}</td>
-      <td>${linkCell(c.id,"instagram",c.instagram,"insta","@ユーザー名 / URL")}</td><td>${linkCell(c.id,"magazineUrl",c.magazineUrl,"url")}</td><td>${linkCell(c.id,"minutes",c.minutes,"url")}</td>
+      <td>${linkCell(c.id,"instagram",c.instagram,"insta","@ユーザー名 / URL")}</td>
       <td>${schedChip(c)}</td><td>${dupBadge(info,c.id)}</td><td style="text-align:center">${delCell(c)}</td></tr>`).join("");
-    const noHit=`<tr id="noHit" class="empty-row"${ws.length&&list.length&&!hit?"":' style="display:none"'}><td colspan="17">検索条件に一致する見込み顧客がいません。</td></tr>`;
-    const empty=(!list.length && S.draftMode!=="row") ? `<tr class="empty-row"><td colspan="17">見込み顧客はまだいません。ゆっくり登録していきましょう。</td></tr>` : "";
-    const addRow=(!S.draftMode && S.canWrite) ? `<tr><td colspan="17"><button class="add-row-btn" id="addRowBtn">＋ 行を追加</button></td></tr>` : "";
-    main=`<div class="scrollx lead-table"><table class="t iaa-t"><tr>${["No","氏名","ふりがな","大学","学年","部活","ルート","アカウント名","IAA","イベント","メモ","Instagram","マガジン原稿","議事録","日程","重複","削除"].map((h,i)=>`<th${i===0?' class="stk0"':i===1?' class="stk1"':""}>${h}</th>`).join("")}</tr>${addRow}${S.draftMode==="row"?renderDraftRow():""}${rows}${noHit}${empty}</table></div>`;
+    const noHit=`<tr id="noHit" class="empty-row"${ws.length&&list.length&&!hit?"":' style="display:none"'}><td colspan="15">検索条件に一致する見込み顧客がいません。</td></tr>`;
+    const empty=(!list.length && S.draftMode!=="row") ? `<tr class="empty-row"><td colspan="15">見込み顧客はまだいません。ゆっくり登録していきましょう。</td></tr>` : "";
+    const addRow=(!S.draftMode && S.canWrite) ? `<tr><td colspan="15"><button class="add-row-btn" id="addRowBtn">＋ 行を追加</button></td></tr>` : "";
+    main=`<div class="scrollx lead-table"><table class="t iaa-t"><tr>${["No","氏名","ふりがな","大学","学年","部活","ルート","アカウント名","IAA","イベント","メモ","Instagram","日程","重複","削除"].map((h,i)=>`<th${i===0?' class="stk0"':i===1?' class="stk1"':""}>${h}</th>`).join("")}</tr>${addRow}${S.draftMode==="row"?renderDraftRow():""}${rows}${noHit}${empty}</table></div>`;
   }
   return datalist("uniList",uniNames())+datalist("gyList",M().gradYears)+datalist("clubList",M().clubs)+datalist("routeList",M().routes)+
     `<div class="toolbar"><input id="leadSearch" class="search" value="${esc(S.leadQuery)}" placeholder="フリーワード検索（名前・大学・部活・ルート・メモなど）"/><span class="count" id="leadCount">${ws.length?`${hit}件ヒット / 全${list.length}件`:`全${list.length}件`}</span></div>
@@ -783,9 +781,9 @@ function renderMtgList(list){
     return `<tr class="row-${esc(st)}" data-row="${c.id}"><td class="num stk0">${i+1}</td><td class="stk1">${profileLine(c)}</td><td>${progressLine(c,st)}</td>
       ${STEP_LIST_FIELDS.map(f=>`<td class="step-cell${c[f]?" filled":""}" style="--c:var(--s-${f})">${f==="proposal"?cell(c.id,f,c[f],"text","w-s","propList"):cell(c.id,f,c[f],"date")}</td>`).join("")}
       <td class="declined-cell">${cell(c.id,"declined",c.declined,"date")}</td>
-      <td>${cell(c.id,"memo",c.memo,"text","w-memo")}</td><td>${linkCell(c.id,"minutes",c.minutes,"url")}</td></tr>`; }).join("")
-    || `<tr class="empty-row"><td colspan="15">面談中の候補者はいません。見込み顧客の「IAA」列に面談1回目の日付を入れると、ここに表示されます。</td></tr>`;
-  const H=["No","名前","進捗",...STEP_LIST_FIELDS.map(f=>STEP_BY[f].label),"⑦見送り","メモ","議事録"];
+      <td>${cell(c.id,"memo",c.memo,"text","w-memo")}</td><td>${linkCell(c.id,"magazineUrl",c.magazineUrl,"url")}</td><td>${linkCell(c.id,"minutes",c.minutes,"url")}</td></tr>`; }).join("")
+    || `<tr class="empty-row"><td colspan="16">面談中の候補者はいません。見込み顧客の「IAA」列に面談1回目の日付を入れると、ここに表示されます。</td></tr>`;
+  const H=["No","名前","進捗",...STEP_LIST_FIELDS.map(f=>STEP_BY[f].label),"⑦見送り","メモ","マガジン原稿","議事録"];
   return `<div class="scrollx"><table class="t iaa-t"><tr>${H.map((h,i)=>{ const f=STEP_LIST_FIELDS[i-3]; const cls=[i===0?"stk0":"",i===1?"stk1":"",f?"step-th":""].filter(Boolean).join(" "); return `<th${cls?` class="${cls}"`:""}${f?` style="--c:var(--s-${f})"`:""}>${h}</th>`; }).join("")}</tr>${rows}</table></div>`;
 }
 function optionalInterviews(c){ const o=[]; if(c.interview1&&!c.interview2) o.push("interview2"); if(c.interview2&&!c.interview3) o.push("interview3"); return o; }
@@ -820,9 +818,9 @@ function renderMtgStep(list){
     return `<tr class="row-${esc(st)}" data-row="${c.id}"><td class="num stk0">${i+1}</td><td class="stk1">${profileLine(c)}</td><td>${progressLine(c,st)}</td>
     <td style="min-width:420px">${renderNA(c)}<div class="na-history">${renderHistory(c)}</div></td>
     <td class="declined-cell">${cell(c.id,"declined",c.declined,"date")}</td>
-    <td>${cell(c.id,"memo",c.memo,"text","w-memo")}</td><td>${linkCell(c.id,"minutes",c.minutes,"url")}</td></tr>`; }).join("")
-    || `<tr class="empty-row"><td colspan="7">面談中の候補者はいません</td></tr>`;
-  return `<div class="scrollx"><table class="t iaa-t"><tr>${["No","名前","進捗","ネクストアクション","⑦見送り","メモ","議事録"].map((h,i)=>`<th${i===0?' class="stk0"':i===1?' class="stk1"':""}>${h}</th>`).join("")}</tr>${rows}</table></div>`;
+    <td>${cell(c.id,"memo",c.memo,"text","w-memo")}</td><td>${linkCell(c.id,"magazineUrl",c.magazineUrl,"url")}</td><td>${linkCell(c.id,"minutes",c.minutes,"url")}</td></tr>`; }).join("")
+    || `<tr class="empty-row"><td colspan="8">面談中の候補者はいません</td></tr>`;
+  return `<div class="scrollx"><table class="t iaa-t"><tr>${["No","名前","進捗","ネクストアクション","⑦見送り","メモ","マガジン原稿","議事録"].map((h,i)=>`<th${i===0?' class="stk0"':i===1?' class="stk1"':""}>${h}</th>`).join("")}</tr>${rows}</table></div>`;
 }
 function renderMtg(){
   const list=applySort(mine().filter(isIaa), S.iaaSort);
