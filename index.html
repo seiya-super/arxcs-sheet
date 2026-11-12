@@ -865,6 +865,31 @@ function filterOv(scopeUid, f){
     if(ws.length){ const t=[fullName(c),fullName(c).replace(/\s/g,""),c.lastNameFurigana,c.firstNameFurigana,c.university,c.gradYear,c.club,c.route,c.accountName,c.memo,ownerOf(c),c.opsMember].join(" ").toLowerCase(); if(!ws.every(w=>t.includes(w))) return false; }
     return true; });
 }
+// 全体リストの上部：チーム全員の「日程調整中」（担当者・調整中にしてからの日数・見込み登録からの日数）
+function renderTeamSched(){
+  const today=todayStr();
+  const list=S.candidates.filter(c=>c.schedStatus).map(c=>({c, d:diffDays(c.schedSince,today), r:diffDays(registeredDate(c),today)}))
+    .sort((a,b)=>(b.d??-1)-(a.d??-1));
+  const fm=S.schedMember||"";
+  const shown=fm?list.filter(x=>x.c.ownerUid===fm):list;
+  const byM={}; list.forEach(x=>{ byM[x.c.ownerUid]=(byM[x.c.ownerUid]||0)+1; });
+  const dayCls=d=>d==null?"":d>7?"late":d>3?"warn-t":"";
+  const rows=shown.map((x,i)=>{ const c=x.c, own=c.ownerUid===S.me;
+    return `<tr${own?` class="clickable" data-goto="${c.id}" data-goto-tab="sched" tabindex="0" title="日程調整の画面を開く"`:""}><td class="num">${i+1}</td>
+      <td style="white-space:nowrap;font-weight:700">${esc(ownerOf(c))}</td><td style="white-space:nowrap;font-weight:700">${esc(nameOf(c)||"（名前未入力）")}</td>
+      <td style="white-space:nowrap">${esc([c.university,c.gradYear].filter(Boolean).join("・"))}</td>
+      <td><span class="sched-chip on" style="cursor:default">${esc(schedLabel(c.schedFor))}</span></td>
+      <td style="white-space:nowrap"><b class="${dayCls(x.d)}">${x.d==null?"—":x.d+"日"}</b><span class="note">（${md(c.schedSince)||"—"}〜）</span></td>
+      <td style="white-space:nowrap">${x.r==null?"—":x.r+"日"}<span class="note">（${md(registeredDate(c))||"—"}）</span></td>
+      <td>${pill(progressOf(c))}</td><td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(c.schedNote||"")}">${esc(c.schedNote||"")}</td></tr>`; }).join("")
+    || `<tr class="empty-row"><td colspan="9">${fm?"この担当者の日程調整中の人はいません":"日程調整中の人はいません"}</td></tr>`;
+  const ms=(S.members||[]).filter(m=>byM[m.id]);
+  return `<section class="dcard" style="margin-bottom:14px">
+    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:10px"><h3 style="margin:0">日程調整中 <span class="tab-count">${list.length}</span></h3>
+      <button class="chip${fm?"":" active"}" data-sched-member="">全員<b>${list.length}</b></button>${ms.map(m=>`<button class="chip${fm===m.id?" active":""}" data-sched-member="${esc(m.id)}">${esc(m.name)}<b>${byM[m.id]}</b></button>`).join("")}</div>
+    <div class="scrollx" style="max-height:340px"><table class="t"><tr><th>No</th><th>担当</th><th>名前</th><th>大学・学年</th><th>調整中の予定</th><th>調整中にしてから</th><th>見込み登録から</th><th>進捗</th><th>調整メモ</th></tr>${rows}</table></div>
+    <p class="note" style="margin:6px 0 0">調整中にしてからの日数が長い順です（3日超はオレンジ、7日超は赤）。自分の担当の行を押すと、日程調整の画面が開きます。</p></section>`;
+}
 function renderOverview(all){
   const f=all?S.adminOvFilter:S.ovFilter, key=all?"adminOvFilter":"ovFilter";
   const H=["No",...(all?["担当"]:[]),"名前","大学","地域","学年","部活","ルート","進捗","最終アクション"];
@@ -1093,7 +1118,7 @@ function renderBody(){
     case "sched": return renderSched();
     case "event": return renderEvent();
     case "overview": return renderOverview(false);
-    case "all": return renderOverview(true);
+    case "all": return renderTeamSched()+renderOverview(true);
     case "admin": return S.isAdmin ? renderAdmin() : `<div class="banner err">この画面は管理者だけが使えます。</div>`;
   }
   return "";
@@ -1255,6 +1280,7 @@ function bindApp(){
     saveField(id, c.schedFor, inp.value); toast(`${schedLabel(c.schedFor)}を ${md(inp.value)} で確定しました`); });
   const sab2=document.getElementById("schedAddBtn"); if(sab2) sab2.onclick=()=>{ const p=document.getElementById("schedPerson"); if(!p.value){ p.focus(); return; } startSched(p.value, document.getElementById("schedFor").value, document.getElementById("schedNoteNew").value.trim()); };
 
+  $$("[data-sched-member]",app).forEach(b=>b.onclick=()=>{ S.schedMember=b.dataset.schedMember; render(true); });
   // 担当リスト・全体リスト
   $$("select[data-ov]",app).forEach(s=>s.onchange=()=>{ S[s.dataset.ovKey]={...S[s.dataset.ovKey],[s.dataset.ov]:s.value}; S.ovLimit=200; render(true); });
   $$("[data-ov-q]",app).forEach(q=>{ const k=q.dataset.ovQ; let t=null, composing=false;
