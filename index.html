@@ -173,6 +173,7 @@ tr.row-⑥入会 td{background:#f4fbf6}tr.row-⑦見送り td{background:#f8f8f8
 .iaa-t .na-input{padding:3px 6px}
 .iaa-t .na-history{margin-top:3px;flex-wrap:nowrap;white-space:nowrap}
 .iaa-t .na-wrap{flex-wrap:nowrap;white-space:nowrap}
+.qbar{display:flex;align-items:center;gap:10px;margin-bottom:10px}
 /* リンク列・日程調整 */
 .lk{display:flex;align-items:center;gap:4px}
 .cell.w-link{min-width:130px;width:150px}
@@ -744,6 +745,23 @@ function bindFurigana(nameEl, furiEl, onUpdate){
   });
 }
 
+/* ================== 各シート共通の検索 ================== */
+// 行に data-qs（検索用の文字）を持たせ、入力のたびに表示/非表示だけ切り替える（日本語入力の変換を途切れさせない）
+S.q = S.q || {};
+function qText(c, extra){ return [fullName(c), fullName(c).replace(/\s/g,""), c.lastNameFurigana, c.firstNameFurigana, c.university, c.gradYear, c.club, c.route, c.accountName, c.instagram, c.memo, c.schedNote, c.proposal, ownerOf(c), computeStatus(c), extra||""].join(" ").toLowerCase(); }
+function qAttr(key, c, extra){ const t=qText(c,extra); const ws=words(S.q[key]); return ` data-qk="${key}" data-qs="${esc(t)}"${ws.length&&!wordsMatch(ws,t)?' style="display:none"':""}`; }
+function qBox(key, total, ph){
+  const ws=words(S.q[key]);
+  return `<div class="qbar"><input class="search" data-qbox="${key}" value="${esc(S.q[key]||"")}" placeholder="${esc(ph||"検索（名前・大学・部活・メモなど）")}"/><span class="count" data-qcount="${key}">${ws.length?"":`全${total}件`}</span></div>`;
+}
+function applyQ(app, key){
+  const ws=words(S.q[key]); const rows=$$(`[data-qk="${key}"]`,app); let hit=0;
+  rows.forEach(r=>{ const ok=!ws.length||wordsMatch(ws,r.dataset.qs||""); if(ok) hit++; r.style.display=ok?"":"none"; });
+  const cnt=app.querySelector(`[data-qcount="${key}"]`); if(cnt) cnt.textContent=ws.length?`${hit}件ヒット / 全${rows.length}件`:`全${rows.length}件`;
+  const nh=app.querySelector(`[data-qnohit="${key}"]`); if(nh) nh.style.display=ws.length&&rows.length&&!hit?"":"none";
+}
+const qNoHit=(key,cols)=>`<tr class="empty-row" data-qnohit="${key}" style="display:none"><td colspan="${cols}">検索に一致する人がいません。</td></tr>`;
+
 /* ================== 画面：日程調整 ================== */
 function schedChip(c){
   if(c.schedStatus) return `<button type="button" class="sched-chip on" data-sched-go="${c.id}" title="${esc(schedLabel(c.schedFor))}の日程を調整中">調整中・${esc(schedLabel(c.schedFor))}</button>`;
@@ -756,7 +774,7 @@ function renderSched(){
   const counts={}; list.forEach(c=>{ counts[c.schedFor]=(counts[c.schedFor]||0)+1; });
   const rows=list.map((c,i)=>{ const days=diffDays(c.schedSince,today); const insta=linkHref("insta",c.instagram||c.accountName);
     const isOther=c.schedFor==="other";
-    return `<tr data-row="${c.id}"><td class="num stk0">${i+1}</td><td class="stk1">${profileLine(c)}</td>
+    return `<tr data-row="${c.id}"${qAttr("sched",c,schedLabel(c.schedFor))}><td class="num stk0">${i+1}</td><td class="stk1">${profileLine(c)}</td>
       <td><select class="cell" data-sched-for="${c.id}" style="min-width:110px">${SCHED_TARGETS.map(([k,l])=>`<option value="${k}"${c.schedFor===k?" selected":""}>${l}</option>`).join("")}</select></td>
       <td style="white-space:nowrap"><span class="${days>7?"late":days>3?"warn-t":""}">${md(c.schedSince)||"—"}（${days==null?"—":days+"日"}）</span></td>
       <td>${progressLine(c,computeStatus(c)||"見込み")}</td>
@@ -764,8 +782,8 @@ function renderSched(){
       <td style="text-align:center">${insta?`<a class="lk-go" href="${esc(insta)}" target="_blank" rel="noopener" title="Instagramを開く">↗</a>`:`<span class="lk-go off">—</span>`}</td>
       <td style="white-space:nowrap">${isOther?"":`<input class="cell" type="date" data-sched-date="${c.id}" value="" style="width:128px;min-width:128px"/> `}<button class="btn primary sm" data-sched-done="${c.id}">${isOther?"調整完了":"日程確定"}</button> <button class="btn sm" data-sched-clear="${c.id}">解除</button></td></tr>`; }).join("")
     || `<tr class="empty-row"><td colspan="8">日程調整中の人はいません。下のフォームか、見込み顧客の「日程」列の「＋調整中にする」で追加できます。</td></tr>`;
-  return `<div class="sched-summary"><b>日程調整中 ${list.length}人</b>${SCHED_TARGETS.filter(([k])=>counts[k]).map(([k,l])=>`<span class="chip">${l}<b>${counts[k]}</b></span>`).join("")}</div>
-    <div class="scrollx"><table class="t iaa-t"><tr><th class="stk0">No</th><th class="stk1">名前</th><th>調整中の予定</th><th>調整開始（経過）</th><th>進捗</th><th>調整メモ（候補日など）</th><th>Instagram</th><th>日程が決まったら</th></tr>${rows}</table></div>
+  return qBox("sched",list.length)+`<div class="sched-summary"><b>日程調整中 ${list.length}人</b>${SCHED_TARGETS.filter(([k])=>counts[k]).map(([k,l])=>`<span class="chip">${l}<b>${counts[k]}</b></span>`).join("")}</div>
+    <div class="scrollx"><table class="t iaa-t"><tr><th class="stk0">No</th><th class="stk1">名前</th><th>調整中の予定</th><th>調整開始（経過）</th><th>進捗</th><th>調整メモ（候補日など）</th><th>Instagram</th><th>日程が決まったら</th></tr>${rows}${qNoHit("sched",8)}</table></div>
     <p class="note" style="margin-top:6px">「日程確定」で日付を入れると、その予定（面談2回目など）の日付として保存され、この一覧から外れます。IAAや見込み顧客で同じ予定の日付を入れた場合も、自動で外れます。</p>
     ${S.canWrite?`<div class="addform" style="margin-top:12px"><b>日程調整中に追加</b>
       <select id="schedPerson"><option value="">名前を選択</option>${cands.map(c=>`<option value="${c.id}">${esc(nameOf(c))}（${esc([c.university,c.gradYear].filter(Boolean).join("・"))}）</option>`).join("")}</select>
@@ -778,13 +796,13 @@ function renderSched(){
 const STEP_LIST_FIELDS=["interview1","interview2","interview3","a2","dml","proposal","proposalDate","participationDate","enrolled"];
 function renderMtgList(list){
   const rows=list.map((c,i)=>{ const st=computeStatus(c);
-    return `<tr class="row-${esc(st)}" data-row="${c.id}"><td class="num stk0">${i+1}</td><td class="stk1">${profileLine(c)}</td><td>${progressLine(c,st)}</td>
+    return `<tr class="row-${esc(st)}" data-row="${c.id}"${qAttr("iaa",c)}><td class="num stk0">${i+1}</td><td class="stk1">${profileLine(c)}</td><td>${progressLine(c,st)}</td>
       ${STEP_LIST_FIELDS.map(f=>`<td class="step-cell${c[f]?" filled":""}" style="--c:var(--s-${f})">${f==="proposal"?cell(c.id,f,c[f],"text","w-s","propList"):cell(c.id,f,c[f],"date")}</td>`).join("")}
       <td class="declined-cell">${cell(c.id,"declined",c.declined,"date")}</td>
       <td>${cell(c.id,"memo",c.memo,"text","w-memo")}</td><td>${linkCell(c.id,"magazineUrl",c.magazineUrl,"url")}</td><td>${linkCell(c.id,"minutes",c.minutes,"url")}</td></tr>`; }).join("")
     || `<tr class="empty-row"><td colspan="16">面談中の候補者はいません。見込み顧客の「IAA」列に面談1回目の日付を入れると、ここに表示されます。</td></tr>`;
   const H=["No","名前","進捗",...STEP_LIST_FIELDS.map(f=>STEP_BY[f].label),"⑦見送り","メモ","マガジン原稿","議事録"];
-  return `<div class="scrollx"><table class="t iaa-t"><tr>${H.map((h,i)=>{ const f=STEP_LIST_FIELDS[i-3]; const cls=[i===0?"stk0":"",i===1?"stk1":"",f?"step-th":""].filter(Boolean).join(" "); return `<th${cls?` class="${cls}"`:""}${f?` style="--c:var(--s-${f})"`:""}>${h}</th>`; }).join("")}</tr>${rows}</table></div>`;
+  return `<div class="scrollx"><table class="t iaa-t"><tr>${H.map((h,i)=>{ const f=STEP_LIST_FIELDS[i-3]; const cls=[i===0?"stk0":"",i===1?"stk1":"",f?"step-th":""].filter(Boolean).join(" "); return `<th${cls?` class="${cls}"`:""}${f?` style="--c:var(--s-${f})"`:""}>${h}</th>`; }).join("")}</tr>${rows}${qNoHit("iaa",16)}</table></div>`;
 }
 function optionalInterviews(c){ const o=[]; if(c.interview1&&!c.interview2) o.push("interview2"); if(c.interview2&&!c.interview3) o.push("interview3"); return o; }
 function nextMainField(c){ let l=-1; MAIN_FLOW.forEach((f,i)=>{ if(c[f]) l=i; }); return MAIN_FLOW[l+1]||null; }
@@ -815,16 +833,16 @@ function renderHistory(c){
 }
 function renderMtgStep(list){
   const rows=list.map((c,i)=>{ const st=computeStatus(c);
-    return `<tr class="row-${esc(st)}" data-row="${c.id}"><td class="num stk0">${i+1}</td><td class="stk1">${profileLine(c)}</td><td>${progressLine(c,st)}</td>
+    return `<tr class="row-${esc(st)}" data-row="${c.id}"${qAttr("iaa",c)}><td class="num stk0">${i+1}</td><td class="stk1">${profileLine(c)}</td><td>${progressLine(c,st)}</td>
     <td style="min-width:420px">${renderNA(c)}<div class="na-history">${renderHistory(c)}</div></td>
     <td class="declined-cell">${cell(c.id,"declined",c.declined,"date")}</td>
     <td>${cell(c.id,"memo",c.memo,"text","w-memo")}</td><td>${linkCell(c.id,"magazineUrl",c.magazineUrl,"url")}</td><td>${linkCell(c.id,"minutes",c.minutes,"url")}</td></tr>`; }).join("")
     || `<tr class="empty-row"><td colspan="8">面談中の候補者はいません</td></tr>`;
-  return `<div class="scrollx"><table class="t iaa-t"><tr>${["No","名前","進捗","ネクストアクション","⑦見送り","メモ","マガジン原稿","議事録"].map((h,i)=>`<th${i===0?' class="stk0"':i===1?' class="stk1"':""}>${h}</th>`).join("")}</tr>${rows}</table></div>`;
+  return `<div class="scrollx"><table class="t iaa-t"><tr>${["No","名前","進捗","ネクストアクション","⑦見送り","メモ","マガジン原稿","議事録"].map((h,i)=>`<th${i===0?' class="stk0"':i===1?' class="stk1"':""}>${h}</th>`).join("")}</tr>${rows}${qNoHit("iaa",8)}</table></div>`;
 }
 function renderMtg(){
   const list=applySort(mine().filter(isIaa), S.iaaSort);
-  return datalist("propList",M().proposals)+
+  return datalist("propList",M().proposals)+qBox("iaa",list.length)+
     `<div class="toolbar"><div class="seg"><button data-iaa-mode="list" class="${S.iaaMode==="list"?"active":""}" title="面談1回目〜⑥入会の列に日付を直接入力">一覧入力</button><button data-iaa-mode="step" class="${S.iaaMode==="step"?"active":""}" title="次のステップに日付を打って確定すると次へ進む">ステップ入力</button></div>
     <div class="grow"></div>${sortBar(S.iaaSort,[["name","名前"],["interview1","面談日"],["gradYear","年卒"],["status","ステータス"]],"data-iaa-sort")}</div>`+
     (S.iaaMode==="step"?renderMtgStep(list):renderMtgList(list));
@@ -838,7 +856,7 @@ function renderEvent(){
   const t=v=>`<td>${v?esc(v):'<span style="color:var(--sub)">—</span>'}</td>`;
   const sel=(c,i,v)=>{ let o=`<option value="">イベントを選択</option>`+EV.map(e=>`<option value="${esc(e)}"${e===v?" selected":""}>${esc(e)}</option>`).join(""); if(v&&!EV.includes(v)) o+=`<option value="${esc(v)}" selected>${esc(v)}</option>`;
     return `<select class="cell" data-ev="${c.id}" data-ev-i="${i}" ${S.canWrite?"":"disabled"}>${o}</select>`; };
-  const rows=rd.map((r,i)=>{ const c=r.c; return `<tr class="${r.i?"event-more":""}"><td class="num">${i+1}</td>${t(fullName(c))}${t(fullFuri(c))}${t(c.university)}${t(c.gradYear)}${t(c.club)}${t(c.route)}${t(c.accountName)}${t(slash(c.initialActionDate))}
+  const rows=rd.map((r,i)=>{ const c=r.c; return `<tr class="${r.i?"event-more":""}"${qAttr("event",c,r.n)}><td class="num">${i+1}</td>${t(fullName(c))}${t(fullFuri(c))}${t(c.university)}${t(c.gradYear)}${t(c.club)}${t(c.route)}${t(c.accountName)}${t(slash(c.initialActionDate))}
     <td style="min-width:200px">${sel(c,r.i,r.n)}</td><td style="white-space:nowrap">${S.canWrite?(r.i===r.count-1?`<button class="btn sm" data-ev-add="${c.id}">＋ 参加を追加</button> `:"")+((r.n||r.count>1)?`<button class="btn sm" data-ev-rm="${c.id}" data-ev-i="${r.i}" title="この参加を削除">✕</button>`:""):""}</td></tr>`; }).join("")
     || `<tr class="empty-row"><td colspan="11">${filter?"このイベントの参加者はまだいません。":"イベント参加者はまだいません。見込み顧客の「イベント」列に日付を入れると、ここに表示されます。"}</td></tr>`;
   const total=rd.filter(r=>r.n).length;
@@ -846,9 +864,9 @@ function renderEvent(){
   return (S.canWrite?`<div class="addform"><b>参加を登録</b><select id="evPerson"><option value="">名前を選択</option>${mineNamed.map(c=>`<option value="${c.id}">${esc(fullName(c))}（${esc([c.university,c.gradYear].filter(Boolean).join("・"))}）</option>`).join("")}</select>
     <select id="evName"><option value="">イベントを選択</option>${EV.map(e=>`<option value="${esc(e)}"${e===filter?" selected":""}>${esc(e)}</option>`).join("")}</select><button class="btn primary" id="evAddBtn">追加</button>
     ${EV.length?"":`<span class="note">イベントは「管理」タブのマスタで登録できます</span>`}</div>`:"")+
-    `<div class="toolbar"><label class="filter">イベント<select id="evFilter"><option value="">すべてのイベント</option>${EV.map(e=>`<option value="${esc(e)}"${e===filter?" selected":""}>${esc(e)}</option>`).join("")}</select></label><span class="count">参加 ${total}件 / ${people.length}人</span>
+    qBox("event",rd.length,"検索（名前・大学・イベント名など）")+`<div class="toolbar"><label class="filter">イベント<select id="evFilter"><option value="">すべてのイベント</option>${EV.map(e=>`<option value="${esc(e)}"${e===filter?" selected":""}>${esc(e)}</option>`).join("")}</select></label><span class="count">参加 ${total}件 / ${people.length}人</span>
     <div class="grow"></div>${sortBar(S.iaaSort,[["name","名前"],["initialActionDate","初回アクション日"],["gradYear","年卒"]],"data-iaa-sort")}</div>
-    <div class="scrollx"><table class="t"><tr>${["No","名前","ふりがな","大学","学年","部活","ルート","アカウント名","初回アクション日","イベント",""].map(h=>`<th>${h}</th>`).join("")}</tr>${rows}</table></div>`;
+    <div class="scrollx"><table class="t"><tr>${["No","名前","ふりがな","大学","学年","部活","ルート","アカウント名","初回アクション日","イベント",""].map(h=>`<th>${h}</th>`).join("")}</tr>${rows}${qNoHit("event",11)}</table></div>`;
 }
 function evEntries(id){ const c=S.candidates.find(x=>x.id===id); return c?eventEntriesOf(c).slice():null; }
 
@@ -875,7 +893,7 @@ function renderTeamSched(){
   const byM={}; list.forEach(x=>{ byM[x.c.ownerUid]=(byM[x.c.ownerUid]||0)+1; });
   const dayCls=d=>d==null?"":d>7?"late":d>3?"warn-t":"";
   const rows=shown.map((x,i)=>{ const c=x.c, own=c.ownerUid===S.me;
-    return `<tr${own?` class="clickable" data-goto="${c.id}" data-goto-tab="sched" tabindex="0" title="日程調整の画面を開く"`:""}><td class="num">${i+1}</td>
+    return `<tr${own?` class="clickable" data-goto="${c.id}" data-goto-tab="sched" tabindex="0" title="日程調整の画面を開く"`:""}${qAttr("teamsched",c,schedLabel(c.schedFor))}><td class="num">${i+1}</td>
       <td style="white-space:nowrap;font-weight:700">${esc(ownerOf(c))}</td><td style="white-space:nowrap;font-weight:700">${esc(nameOf(c)||"（名前未入力）")}</td>
       <td style="white-space:nowrap">${esc([c.university,c.gradYear].filter(Boolean).join("・"))}</td>
       <td><span class="sched-chip on" style="cursor:default">${esc(schedLabel(c.schedFor))}</span></td>
@@ -887,7 +905,7 @@ function renderTeamSched(){
   return `<section class="dcard" style="margin-bottom:14px">
     <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:10px"><h3 style="margin:0">日程調整中 <span class="tab-count">${list.length}</span></h3>
       <button class="chip${fm?"":" active"}" data-sched-member="">全員<b>${list.length}</b></button>${ms.map(m=>`<button class="chip${fm===m.id?" active":""}" data-sched-member="${esc(m.id)}">${esc(m.name)}<b>${byM[m.id]}</b></button>`).join("")}</div>
-    <div class="scrollx" style="max-height:340px"><table class="t"><tr><th>No</th><th>担当</th><th>名前</th><th>大学・学年</th><th>調整中の予定</th><th>調整中にしてから</th><th>見込み登録から</th><th>進捗</th><th>調整メモ</th></tr>${rows}</table></div>
+    ${qBox("teamsched",shown.length,"日程調整中の人を検索（名前・担当者・大学など）")}<div class="scrollx" style="max-height:340px"><table class="t"><tr><th>No</th><th>担当</th><th>名前</th><th>大学・学年</th><th>調整中の予定</th><th>調整中にしてから</th><th>見込み登録から</th><th>進捗</th><th>調整メモ</th></tr>${rows}${qNoHit("teamsched",9)}</table></div>
     <p class="note" style="margin:6px 0 0">調整中にしてからの日数が長い順です（3日超はオレンジ、7日超は赤）。自分の担当の行を押すと、日程調整の画面が開きます。</p></section>`;
 }
 function renderOverview(all){
@@ -1125,7 +1143,7 @@ function renderBody(){
 }
 function captureFocus(){
   const a=document.activeElement; if(!a || a===document.body || !document.getElementById("app").contains(a)) return null;
-  const attrs=["data-id","data-field","data-draft","id","data-na-input","data-ov-q","data-mem-name","data-master","data-alert"];
+  const attrs=["data-id","data-field","data-draft","id","data-na-input","data-ov-q","data-mem-name","data-master","data-alert","data-qbox"];
   const sel=attrs.filter(k=>a.hasAttribute(k)).map(k=>`[${k}="${CSS.escape(a.getAttribute(k))}"]`).join("");
   if(!sel) return null;
   let s=null,e=null; try{ s=a.selectionStart; e=a.selectionEnd; }catch(x){}
@@ -1280,6 +1298,7 @@ function bindApp(){
     saveField(id, c.schedFor, inp.value); toast(`${schedLabel(c.schedFor)}を ${md(inp.value)} で確定しました`); });
   const sab2=document.getElementById("schedAddBtn"); if(sab2) sab2.onclick=()=>{ const p=document.getElementById("schedPerson"); if(!p.value){ p.focus(); return; } startSched(p.value, document.getElementById("schedFor").value, document.getElementById("schedNoteNew").value.trim()); };
 
+  $$("[data-qbox]",app).forEach(inp=>{ const k=inp.dataset.qbox; applyQ(app,k); inp.addEventListener("input",()=>{ S.q[k]=inp.value; applyQ(app,k); }); inp.addEventListener("keydown",e=>{ if(e.key==="Escape"){ inp.value=""; S.q[k]=""; applyQ(app,k); } }); });
   $$("[data-sched-member]",app).forEach(b=>b.onclick=()=>{ S.schedMember=b.dataset.schedMember; render(true); });
   // 担当リスト・全体リスト
   $$("select[data-ov]",app).forEach(s=>s.onchange=()=>{ S[s.dataset.ovKey]={...S[s.dataset.ovKey],[s.dataset.ov]:s.value}; S.ovLimit=200; render(true); });
