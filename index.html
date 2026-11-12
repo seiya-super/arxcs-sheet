@@ -159,6 +159,8 @@ tr.row-⑥入会 td{background:#f4fbf6}tr.row-⑦見送り td{background:#f8f8f8
 .iaa-t .stk0{position:sticky;left:0;z-index:2;background:#fff;width:34px;min-width:34px;max-width:34px}
 .iaa-t .stk1{position:sticky;left:34px;z-index:2;background:#fff;box-shadow:1px 0 0 var(--line)}
 .iaa-t th.stk0,.iaa-t th.stk1{z-index:3;background:#fafafa}
+.iaa-t tr.dup-row td.stk0,.iaa-t tr.dup-row td.stk1{background:#fff5f4}
+.iaa-t tr.draft-row td.stk0,.iaa-t tr.draft-row td.stk1{background:#f7f8ff}
 .pline{min-width:150px;max-width:230px}
 .pl1{white-space:nowrap;display:flex;align-items:baseline;gap:6px}
 .pn{font-weight:900;font-size:13px}
@@ -171,6 +173,16 @@ tr.row-⑥入会 td{background:#f4fbf6}tr.row-⑦見送り td{background:#f8f8f8
 .iaa-t .na-input{padding:3px 6px}
 .iaa-t .na-history{margin-top:3px;flex-wrap:nowrap;white-space:nowrap}
 .iaa-t .na-wrap{flex-wrap:nowrap;white-space:nowrap}
+/* リンク列・日程調整 */
+.lk{display:flex;align-items:center;gap:4px}
+.cell.w-link{min-width:130px;width:150px}
+.lk-go{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;background:var(--ink);color:#fff;text-decoration:none;font-size:12px;font-weight:900;flex:none}
+.lk-go.off{background:#eceef2;color:#b0b4bb}
+.sched-chip{border:1px dashed var(--line);background:#fff;border-radius:999px;padding:3px 9px;font-size:10px;font-weight:700;color:var(--sub);white-space:nowrap}
+.sched-chip.on{border:1px solid #f5c26b;background:#fff4dc;color:#8a5a00}
+.tab-count{display:inline-block;margin-left:5px;min-width:18px;padding:0 5px;border-radius:999px;background:#f5a623;color:#fff;font-size:10px;line-height:18px;text-align:center}
+.sched-summary{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:10px;font-size:13px}
+.late{color:var(--danger);font-weight:700}.warn-t{color:var(--warn);font-weight:700}
 /* step input */
 .na-wrap{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .na-box{display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--c,#ddd);border-radius:12px;padding:5px 8px;background:#fff}
@@ -285,7 +297,7 @@ const APO_MAX = 15;
 // 個人シートにログインしたまま「管理」も使える担当者（管理画面の「メンバー」で変更できる。最初の値）
 const DEFAULT_ADMIN_MEMBERS = ["shiromizu","matsuoka"];
 const TABS = [
-  {id:"dash",label:"ダッシュボード"},{id:"apo",label:"アポ目標"},{id:"lead",label:"見込み顧客"},
+  {id:"dash",label:"ダッシュボード"},{id:"apo",label:"アポ目標"},{id:"lead",label:"見込み顧客"},{id:"sched",label:"日程調整"},
   {id:"mtg",label:"IAA"},{id:"event",label:"イベント"},{id:"overview",label:"担当リスト"},{id:"all",label:"全体リスト"},{id:"admin",label:"管理",admin:true}
 ];
 const STEPS = [
@@ -421,9 +433,47 @@ function fieldPatch(cur, field, value){
   if(field==="declined" && value) w.enrolled="";
   if(field==="proposal" && value==="イベント" && !cur.proposalDate) w.proposalDate=todayStr();
   if(["interview1","initialActionDate","proposal"].includes(field) && cur.legacySourceStage) w.legacySourceStage="";
+  if(cur.schedStatus && value && field===cur.schedFor){ w.schedStatus=""; w.schedDoneAt=todayStr(); }
   const after={...cur,...w}; w.stage=computeStage(after);
   const same=(a,b)=>Array.isArray(a)||Array.isArray(b) ? JSON.stringify(a||[])===JSON.stringify(b||[]) : (a??"")===(b??"");
   return Object.fromEntries(Object.entries(w).filter(([k,v])=>!same(cur[k],v)));
+}
+// リンク列：URL、またはInstagramは「@ユーザー名」でも開けるようにする
+function linkHref(kind, v){
+  v=String(v||"").trim(); if(!v) return "";
+  if(/^https?:\/\//i.test(v)) return v;
+  if(kind==="insta"){ const h=v.replace(/^[@＠]+/,"").replace(/^(https?:\/\/)?(www\.)?instagram\.com\//i,"").split(/[/?#\s]/)[0]; return /^[A-Za-z0-9._]+$/.test(h)?"https://www.instagram.com/"+h+"/":""; }
+  if(/^[\w-]+(\.[\w-]+)+(\/\S*)?$/.test(v)) return "https://"+v;
+  return "";
+}
+function linkCell(id, field, value, kind, ph){
+  const href=linkHref(kind,value);
+  return `<div class="lk"><input class="cell w-link" data-id="${id}" data-field="${field}" type="text" value="${esc(value)}" placeholder="${esc(ph||"URLを貼り付け")}"${S.canWrite?"":" readonly"}/>${href?`<a class="lk-go" href="${esc(href)}" target="_blank" rel="noopener" title="開く">↗</a>`:`<span class="lk-go off">↗</span>`}</div>`;
+}
+// 複数の項目をまとめて保存（日程調整の開始・解除など）
+async function savePatch(id, patch){
+  const cur=S.candidates.find(c=>c.id===id); if(!cur || !S.db) return;
+  const p={...patch, updatedBy:S.me};
+  const idx=S.candidates.findIndex(c=>c.id===id); S.candidates=S.candidates.slice(); S.candidates[idx]={...cur,...p}; if(S.absorbLocal) S.absorbLocal(id,{...cur,...p});
+  render(true);
+  try{ await enqueue("c/"+id, ()=>S.db.doc("candidates/"+id).update(p)); }catch(e){ writeFailed(e); }
+}
+const SCHED_TARGETS=[["interview1","面談1回目"],["interview2","面談2回目"],["interview3","面談3回目"],["proposalDate","④提案日"],["participationDate","⑤参加日"],["other","その他"]];
+const schedLabel = k => (SCHED_TARGETS.find(t=>t[0]===k)||[,"その他"])[1];
+function suggestSchedFor(c){
+  if(!c.interview1) return "interview1";
+  if(c.enrolled||c.declined) return "other";
+  if(c.participationDate) return "other";
+  if(c.proposalDate) return "participationDate";
+  if(c.proposal) return "proposalDate";
+  if(!c.interview2) return "interview2";
+  if(!c.interview3) return "interview3";
+  return "proposalDate";
+}
+function startSched(id, forKey, note){
+  const c=S.candidates.find(x=>x.id===id); if(!c) return;
+  savePatch(id,{schedStatus:"調整中", schedFor:forKey||suggestSchedFor(c), schedSince:todayStr(), schedNote:note||c.schedNote||""});
+  toast(`${nameOf(c)}さんを日程調整中にしました`);
 }
 async function saveField(id, field, value){
   const cur=S.candidates.find(c=>c.id===id); if(!cur || !S.db) return;
@@ -446,7 +496,10 @@ async function saveField(id, field, value){
 const LOGO_SRC = "data:image/png;base64,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";
 const LOGO = s => `<img src="${LOGO_SRC}" width="${s}" height="${s}" alt="株式会社Arxcs" style="display:block;width:${s}px;height:${s}px;object-fit:contain"/>`;
 const APP_URL = location.origin + location.pathname;
-const inviteLink = code => APP_URL + "#invite-" + code;
+// LINEで開いたとき、LINE内のブラウザではなく通常のブラウザ（Safari・Chrome）で開くようにする（openExternalBrowser=1）
+const inviteLink = code => APP_URL + "?openExternalBrowser=1#invite-" + code;
+// LINE・Instagram・Facebookなどのアプリ内ブラウザでは、GoogleがGoogleログインを拒否するため、通常のブラウザで開くよう案内する
+const IN_APP = /Line\/|FBAN|FBAV|Instagram|Twitter|MicroMessenger|KAKAOTALK|Messenger|; wv\)/i.test(navigator.userAgent||"");
 function gateCard(body){
   return `<div class="login-wrap"><div class="login-card" style="max-width:380px">
     <div class="logo-row">${LOGO(30)}<div><div class="logo-title brand-font">Arxcs</div><div class="logo-sub">個人シートアプリ・チーム共有</div></div></div>
@@ -455,6 +508,13 @@ function gateCard(body){
 // ログイン前の画面：招待リンクからの登録／自動ログイン
 function renderLogin(){
   if(S.dbState==="config") return gateCard(`<div class="banner">まだFirebaseの設定が入っていません（config.js）。</div>`);
+  if(S.dbState==="signin" && IN_APP){
+    const url=location.href.replace(/[?&]openExternalBrowser=1/,"");
+    return gateCard(`<div style="font-weight:900;font-size:15px;margin-bottom:6px">ブラウザで開いてください</div>
+      <p class="note" style="margin:0 0 10px">LINEやInstagramなどのアプリの中で開いているため、Googleでログインできません。画面の右上（または右下）のメニュー「…」から<b>「ブラウザで開く」</b>（「Safariで開く」「Chromeで開く」など）を選んでください。</p>
+      <p class="note" style="margin:0 0 6px">うまくいかないときは、下のリンクをコピーして、SafariやChromeに貼り付けて開いてください。</p>
+      <div style="display:flex;gap:6px"><input class="inp" readonly value="${esc(url)}" data-select-all style="font-size:11px"/><button class="btn sm" data-copy="${esc(url)}">コピー</button></div>`);
+  }
   if(S.dbState==="signin") return gateCard(`<div style="font-weight:900;font-size:15px;margin-bottom:6px">${S.inviteCode?"チームに参加する":"ログイン"}</div>
     <p class="note" style="margin:0 0 14px">${S.inviteCode?"招待リンクから参加します。まずGoogleアカウントでログインしてください。":"Googleアカウントでログインしてください。一度ログインした端末では、次回から自動でログインします。"}</p>
     <button class="btn primary" id="googleBtn" style="padding:9px 18px;font-size:13px" ${S.signingIn?"disabled":""}>${S.signingIn?"ログイン中…":"Googleでログイン"}</button>
@@ -512,7 +572,7 @@ function renderTop(){
   const tabs=TABS.filter(t=>!t.admin || S.isAdmin);
   return `<div class="topbar"><div class="topbar-brand">${LOGO(24)}<div class="app-title brand-font">Arxcs<span> 個人シートアプリ</span></div></div>
     <div class="topbar-user"><span class="member-pill">${S.actingAs?"代理表示中：":"担当："}${esc(memberName(S.me))}</span>${S.actingAs?`<button class="btn" id="backToSelf">自分のシートに戻る</button>`:`<button class="btn" id="logoutBtn" title="${esc(S.email||"")}">ログアウト</button>`}<button class="nav-menu-btn" id="navMenuBtn" aria-label="メニュー">☰</button></div></div>
-    <nav class="tab-nav${S.navOpen?" open":""}">${tabs.map(t=>`<button class="tab-link${S.tab===t.id?" active":""}" data-tab="${t.id}">${t.label}</button>`).join("")}</nav>`;
+    <nav class="tab-nav${S.navOpen?" open":""}">${tabs.map(t=>{ const n=t.id==="sched"?mine().filter(c=>c.schedStatus).length:0; return `<button class="tab-link${S.tab===t.id?" active":""}" data-tab="${t.id}">${t.label}${n?`<span class="tab-count">${n}</span>`:""}</button>`; }).join("")}</nav>`;
 }
 
 /* ================== 画面：アポ目標 ================== */
@@ -560,12 +620,12 @@ function dInput(k, ph, type){ const v=S.draft[k]||""; return type==="date" ? `<i
 function dList(k, list, ph){ return `<input class="cell ${k==="university"?"w-uni":"w-s"}" data-draft="${k}" list="${list}" type="text" value="${esc(S.draft[k]||"")}" placeholder="${ph}"/>`; }
 function renderDraftRow(){
   const ck=draftCheck(), dis=ck.blocked||S.busy;
-  return `<tr class="draft-row"><td class="num">新</td>
-    <td>${dInput("name","例：山田 太郎")}</td><td>${dInput("furigana","例：やまだ たろう")}</td>
+  return `<tr class="draft-row"><td class="num stk0">新</td>
+    <td class="stk1">${dInput("name","例：山田 太郎")}</td><td>${dInput("furigana","例：やまだ たろう")}</td>
     <td>${dList("university","uniList","大学を検索")}</td><td>${dList("gradYear","gyList","選択")}</td><td>${dList("club","clubList","選択")}</td><td>${dList("route","routeList","選択")}</td>
     <td>${dInput("accountName","例：@username")}</td><td>${dInput("interview1","","date")}</td><td>${dInput("initialActionDate","","date")}</td><td>${dInput("memo","気になったことがあれば")}</td>
-    <td colspan="2"><div style="display:flex;gap:4px"><button class="btn primary sm" id="submitLead" ${dis?"disabled":""}>${S.busy?"…":"登録"}</button><button class="btn sm" data-draft-close>✕</button></div></td></tr>
-    <tr class="draft-row"><td></td><td colspan="12" id="dupHolder" style="padding:2px 8px 10px">${ck.html}</td></tr>`;
+    <td></td><td></td><td></td><td></td><td colspan="2"><div style="display:flex;gap:4px"><button class="btn primary sm" id="submitLead" ${dis?"disabled":""}>${S.busy?"…":"登録"}</button><button class="btn sm" data-draft-close>✕</button></div></td></tr>
+    <tr class="draft-row"><td></td><td colspan="16" id="dupHolder" style="padding:2px 8px 10px">${ck.html}</td></tr>`;
 }
 function renderLeadModal(){
   if(S.draftMode!=="modal" || !S.draft) return "";
@@ -615,19 +675,26 @@ function renderLead(){
         <label class="cf"><span>部活</span>${cell(c.id,"club",c.club,"text","","clubList")}</label><label class="cf"><span>ルート</span>${cell(c.id,"route",c.route,"text","","routeList")}</label>
         <label class="cf"><span>IAA（面談1回目）</span>${cell(c.id,"interview1",c.interview1,"date")}</label><label class="cf"><span>イベント</span>${cell(c.id,"initialActionDate",c.initialActionDate,"date")}</label>
       </div><label class="cf"><span>メモ</span>${cell(c.id,"memo",c.memo)}</label>
-      <div style="margin-top:8px;text-align:right">${delCell(c)}</div></div>`).join("")}</div>`
+      <div class="lcard-grid" style="grid-template-columns:1fr">
+        <label class="cf"><span>Instagramアカウント</span>${linkCell(c.id,"instagram",c.instagram,"insta","@ユーザー名 / URL")}</label>
+        <label class="cf"><span>マガジン原稿</span>${linkCell(c.id,"magazineUrl",c.magazineUrl,"url")}</label>
+        <label class="cf"><span>議事録</span>${linkCell(c.id,"minutes",c.minutes,"url")}</label>
+      </div>
+      <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center">${schedChip(c)}${delCell(c)}</div></div>`).join("")}</div>`
       : `<div class="dempty">見込み顧客はまだいません。ゆっくり登録していきましょう。</div>`;
   } else {
     const rows=list.map((c,i)=>`<tr class="${info[c.id]?"dup-row":""}" data-search="${esc(searchText(c))}"${hidden(c)?' style="display:none"':""}>
-      <td class="num">${i+1}</td><td>${cell(c.id,"name",fullName(c),"text","w-name")}</td><td>${cell(c.id,"furigana",fullFuri(c),"text","w-name")}</td>
+      <td class="num stk0">${i+1}</td><td class="stk1">${cell(c.id,"name",fullName(c),"text","w-name")}</td><td>${cell(c.id,"furigana",fullFuri(c),"text","w-name")}</td>
       <td>${cell(c.id,"university",c.university,"text","w-uni","uniList")}</td><td>${cell(c.id,"gradYear",c.gradYear,"text","w-s","gyList")}</td>
       <td>${cell(c.id,"club",c.club,"text","w-s","clubList")}</td><td>${cell(c.id,"route",c.route,"text","w-s","routeList")}</td>
       <td>${cell(c.id,"accountName",c.accountName,"text","w-name")}</td><td>${cell(c.id,"interview1",c.interview1,"date")}</td><td>${cell(c.id,"initialActionDate",c.initialActionDate,"date")}</td>
-      <td>${cell(c.id,"memo",c.memo,"text","w-memo")}</td><td>${dupBadge(info,c.id)}</td><td style="text-align:center">${delCell(c)}</td></tr>`).join("");
-    const noHit=`<tr id="noHit" class="empty-row"${ws.length&&list.length&&!hit?"":' style="display:none"'}><td colspan="13">検索条件に一致する見込み顧客がいません。</td></tr>`;
-    const empty=(!list.length && S.draftMode!=="row") ? `<tr class="empty-row"><td colspan="13">見込み顧客はまだいません。ゆっくり登録していきましょう。</td></tr>` : "";
-    const addRow=(!S.draftMode && S.canWrite) ? `<tr><td colspan="13"><button class="add-row-btn" id="addRowBtn">＋ 行を追加</button></td></tr>` : "";
-    main=`<div class="scrollx lead-table"><table class="t"><tr>${["No","氏名","ふりがな","大学","学年","部活","ルート","アカウント名","IAA","イベント","メモ","重複","削除"].map(h=>`<th>${h}</th>`).join("")}</tr>${addRow}${S.draftMode==="row"?renderDraftRow():""}${rows}${noHit}${empty}</table></div>`;
+      <td>${cell(c.id,"memo",c.memo,"text","w-memo")}</td>
+      <td>${linkCell(c.id,"instagram",c.instagram,"insta","@ユーザー名 / URL")}</td><td>${linkCell(c.id,"magazineUrl",c.magazineUrl,"url")}</td><td>${linkCell(c.id,"minutes",c.minutes,"url")}</td>
+      <td>${schedChip(c)}</td><td>${dupBadge(info,c.id)}</td><td style="text-align:center">${delCell(c)}</td></tr>`).join("");
+    const noHit=`<tr id="noHit" class="empty-row"${ws.length&&list.length&&!hit?"":' style="display:none"'}><td colspan="17">検索条件に一致する見込み顧客がいません。</td></tr>`;
+    const empty=(!list.length && S.draftMode!=="row") ? `<tr class="empty-row"><td colspan="17">見込み顧客はまだいません。ゆっくり登録していきましょう。</td></tr>` : "";
+    const addRow=(!S.draftMode && S.canWrite) ? `<tr><td colspan="17"><button class="add-row-btn" id="addRowBtn">＋ 行を追加</button></td></tr>` : "";
+    main=`<div class="scrollx lead-table"><table class="t iaa-t"><tr>${["No","氏名","ふりがな","大学","学年","部活","ルート","アカウント名","IAA","イベント","メモ","Instagram","マガジン原稿","議事録","日程","重複","削除"].map((h,i)=>`<th${i===0?' class="stk0"':i===1?' class="stk1"':""}>${h}</th>`).join("")}</tr>${addRow}${S.draftMode==="row"?renderDraftRow():""}${rows}${noHit}${empty}</table></div>`;
   }
   return datalist("uniList",uniNames())+datalist("gyList",M().gradYears)+datalist("clubList",M().clubs)+datalist("routeList",M().routes)+
     `<div class="toolbar"><input id="leadSearch" class="search" value="${esc(S.leadQuery)}" placeholder="フリーワード検索（名前・大学・部活・ルート・メモなど）"/><span class="count" id="leadCount">${ws.length?`${hit}件ヒット / 全${list.length}件`:`全${list.length}件`}</span></div>
@@ -679,6 +746,36 @@ function bindFurigana(nameEl, furiEl, onUpdate){
   });
 }
 
+/* ================== 画面：日程調整 ================== */
+function schedChip(c){
+  if(c.schedStatus) return `<button type="button" class="sched-chip on" data-sched-go="${c.id}" title="${esc(schedLabel(c.schedFor))}の日程を調整中">調整中・${esc(schedLabel(c.schedFor))}</button>`;
+  return S.canWrite?`<button type="button" class="sched-chip" data-sched-start="${c.id}" title="日程調整中のリストに入れる">＋調整中にする</button>`:"";
+}
+function renderSched(){
+  const today=todayStr();
+  const list=mine().filter(c=>c.schedStatus).sort((a,b)=>(a.schedSince||"").localeCompare(b.schedSince||""));
+  const cands=mine().filter(c=>!c.schedStatus && nameOf(c) && !c.enrolled && !c.declined).sort((a,b)=>(fullFuri(a)||nameOf(a)).localeCompare(fullFuri(b)||nameOf(b),"ja"));
+  const counts={}; list.forEach(c=>{ counts[c.schedFor]=(counts[c.schedFor]||0)+1; });
+  const rows=list.map((c,i)=>{ const days=diffDays(c.schedSince,today); const insta=linkHref("insta",c.instagram||c.accountName);
+    const isOther=c.schedFor==="other";
+    return `<tr data-row="${c.id}"><td class="num stk0">${i+1}</td><td class="stk1">${profileLine(c)}</td>
+      <td><select class="cell" data-sched-for="${c.id}" style="min-width:110px">${SCHED_TARGETS.map(([k,l])=>`<option value="${k}"${c.schedFor===k?" selected":""}>${l}</option>`).join("")}</select></td>
+      <td style="white-space:nowrap"><span class="${days>7?"late":days>3?"warn-t":""}">${md(c.schedSince)||"—"}（${days==null?"—":days+"日"}）</span></td>
+      <td>${progressLine(c,computeStatus(c)||"見込み")}</td>
+      <td>${cell(c.id,"schedNote",c.schedNote,"text","w-memo")}</td>
+      <td style="text-align:center">${insta?`<a class="lk-go" href="${esc(insta)}" target="_blank" rel="noopener" title="Instagramを開く">↗</a>`:`<span class="lk-go off">—</span>`}</td>
+      <td style="white-space:nowrap">${isOther?"":`<input class="cell" type="date" data-sched-date="${c.id}" value="" style="width:128px;min-width:128px"/> `}<button class="btn primary sm" data-sched-done="${c.id}">${isOther?"調整完了":"日程確定"}</button> <button class="btn sm" data-sched-clear="${c.id}">解除</button></td></tr>`; }).join("")
+    || `<tr class="empty-row"><td colspan="8">日程調整中の人はいません。下のフォームか、見込み顧客の「日程」列の「＋調整中にする」で追加できます。</td></tr>`;
+  return `<div class="sched-summary"><b>日程調整中 ${list.length}人</b>${SCHED_TARGETS.filter(([k])=>counts[k]).map(([k,l])=>`<span class="chip">${l}<b>${counts[k]}</b></span>`).join("")}</div>
+    <div class="scrollx"><table class="t iaa-t"><tr><th class="stk0">No</th><th class="stk1">名前</th><th>調整中の予定</th><th>調整開始（経過）</th><th>進捗</th><th>調整メモ（候補日など）</th><th>Instagram</th><th>日程が決まったら</th></tr>${rows}</table></div>
+    <p class="note" style="margin-top:6px">「日程確定」で日付を入れると、その予定（面談2回目など）の日付として保存され、この一覧から外れます。IAAや見込み顧客で同じ予定の日付を入れた場合も、自動で外れます。</p>
+    ${S.canWrite?`<div class="addform" style="margin-top:12px"><b>日程調整中に追加</b>
+      <select id="schedPerson"><option value="">名前を選択</option>${cands.map(c=>`<option value="${c.id}">${esc(nameOf(c))}（${esc([c.university,c.gradYear].filter(Boolean).join("・"))}）</option>`).join("")}</select>
+      <select id="schedFor"><option value="">予定（自動）</option>${SCHED_TARGETS.map(([k,l])=>`<option value="${k}">${l}</option>`).join("")}</select>
+      <input id="schedNoteNew" class="inp" style="width:220px" placeholder="メモ（候補日など・任意）"/>
+      <button class="btn primary" id="schedAddBtn">追加</button></div>`:""}`;
+}
+
 /* ================== 画面：IAA ================== */
 const STEP_LIST_FIELDS=["interview1","interview2","interview3","a2","dml","proposal","proposalDate","participationDate","enrolled"];
 function renderMtgList(list){
@@ -686,7 +783,7 @@ function renderMtgList(list){
     return `<tr class="row-${esc(st)}" data-row="${c.id}"><td class="num stk0">${i+1}</td><td class="stk1">${profileLine(c)}</td><td>${progressLine(c,st)}</td>
       ${STEP_LIST_FIELDS.map(f=>`<td class="step-cell${c[f]?" filled":""}" style="--c:var(--s-${f})">${f==="proposal"?cell(c.id,f,c[f],"text","w-s","propList"):cell(c.id,f,c[f],"date")}</td>`).join("")}
       <td class="declined-cell">${cell(c.id,"declined",c.declined,"date")}</td>
-      <td>${cell(c.id,"memo",c.memo,"text","w-memo")}</td><td>${cell(c.id,"minutes",c.minutes,"text","w-memo")}</td></tr>`; }).join("")
+      <td>${cell(c.id,"memo",c.memo,"text","w-memo")}</td><td>${linkCell(c.id,"minutes",c.minutes,"url")}</td></tr>`; }).join("")
     || `<tr class="empty-row"><td colspan="15">面談中の候補者はいません。見込み顧客の「IAA」列に面談1回目の日付を入れると、ここに表示されます。</td></tr>`;
   const H=["No","名前","進捗",...STEP_LIST_FIELDS.map(f=>STEP_BY[f].label),"⑦見送り","メモ","議事録"];
   return `<div class="scrollx"><table class="t iaa-t"><tr>${H.map((h,i)=>{ const f=STEP_LIST_FIELDS[i-3]; const cls=[i===0?"stk0":"",i===1?"stk1":"",f?"step-th":""].filter(Boolean).join(" "); return `<th${cls?` class="${cls}"`:""}${f?` style="--c:var(--s-${f})"`:""}>${h}</th>`; }).join("")}</tr>${rows}</table></div>`;
@@ -723,7 +820,7 @@ function renderMtgStep(list){
     return `<tr class="row-${esc(st)}" data-row="${c.id}"><td class="num stk0">${i+1}</td><td class="stk1">${profileLine(c)}</td><td>${progressLine(c,st)}</td>
     <td style="min-width:420px">${renderNA(c)}<div class="na-history">${renderHistory(c)}</div></td>
     <td class="declined-cell">${cell(c.id,"declined",c.declined,"date")}</td>
-    <td>${cell(c.id,"memo",c.memo,"text","w-memo")}</td><td>${cell(c.id,"minutes",c.minutes,"text","w-memo")}</td></tr>`; }).join("")
+    <td>${cell(c.id,"memo",c.memo,"text","w-memo")}</td><td>${linkCell(c.id,"minutes",c.minutes,"url")}</td></tr>`; }).join("")
     || `<tr class="empty-row"><td colspan="7">面談中の候補者はいません</td></tr>`;
   return `<div class="scrollx"><table class="t iaa-t"><tr>${["No","名前","進捗","ネクストアクション","⑦見送り","メモ","議事録"].map((h,i)=>`<th${i===0?' class="stk0"':i===1?' class="stk1"':""}>${h}</th>`).join("")}</tr>${rows}</table></div>`;
 }
@@ -831,7 +928,8 @@ function renderDash(forWho, label){
   const dupA=own.filter(c=>info[c.id]).map(c=>{ const d=info[c.id]; const who=d.cross?[...new Set(d.others.filter(o=>o.ownerUid!==c.ownerUid).map(ownerOf))].join("・")+"さんと重複":"同じ担当者の一覧内で重複"; return {id:c.id,name:nameOf(c),reason:who,sev:"dup",tab:"lead"}; });
   const items=[...dupA,...gap,...contact,
     ...own.filter(c=>computeStage(c)==="interview"&&!c.a2&&!c.dml).map(c=>({id:c.id,name:nameOf(c),reason:"①A2・②DMLがまだ未着手です",sev:"info"})),
-    ...own.filter(c=>computeStage(c)==="lead"&&!c.interview1).map(c=>({id:c.id,name:nameOf(c),reason:"IAA（面談1回目）の日付が未設定です",sev:"info",tab:"lead"}))].slice(0,20);
+    ...own.filter(c=>c.schedStatus).map(c=>{ const d=diffDays(c.schedSince,today); return {id:c.id,name:nameOf(c),reason:`日程調整中（${schedLabel(c.schedFor)}・${d==null?"—":d+"日経過"}）`,sev:d>7?"warn":"info",tab:"sched"}; }),
+    ...own.filter(c=>computeStage(c)==="lead"&&!c.interview1&&!c.schedStatus).map(c=>({id:c.id,name:nameOf(c),reason:"IAA（面談1回目）の日付が未設定です",sev:"info",tab:"lead"}))].slice(0,20);
   const clickable = forWho===S.me;
   const alertHtml=items.length?items.map(a=>`<div class="arow ${a.sev}"${clickable?` data-goto="${a.id}"${a.tab?` data-goto-tab="${a.tab}"`:""} tabindex="0"`:""}><span class="n">${esc(a.name)}</span><span class="r">${a.sev==="dup"?"重複：":a.sev==="warn"?"⚠ ":""}${esc(a.reason)}</span><span class="go">${clickable?"›":""}</span></div>`).join(""):`<div class="dempty">対応漏れの候補者はいません。順調です。</div>`;
 
@@ -994,6 +1092,7 @@ function renderBody(){
     case "apo": return renderApo();
     case "lead": return renderLead();
     case "mtg": return renderMtg();
+    case "sched": return renderSched();
     case "event": return renderEvent();
     case "overview": return renderOverview(false);
     case "all": return renderOverview(true);
@@ -1061,6 +1160,8 @@ function bindLogin(){
     if(!n){ document.getElementById("regName").focus(); return; }
     if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(m)){ toast("メールアドレスの形式を確認してください"); document.getElementById("regEmail").focus(); return; }
     registerFromInvite(n,m); };
+  $$("[data-copy]").forEach(b=>b.onclick=async()=>{ try{ await navigator.clipboard.writeText(b.dataset.copy); toast("コピーしました"); }catch(e){ const i=b.parentElement.querySelector("input"); if(i) i.select(); toast("リンクを選択しました。長押しでコピーしてください",4000); } });
+  $$("[data-select-all]").forEach(i=>i.onfocus=()=>i.select());
   const gb=document.getElementById("googleBtn");
   if(gb) gb.onclick=googleSignIn;
   const so=document.getElementById("signOutBtn");
@@ -1145,6 +1246,17 @@ function bindApp(){
     const c=S.candidates.find(x=>x.id===p.value); if(c && !c.initialActionDate) saveField(p.value,"initialActionDate",todayStr()).then(()=>saveField(p.value,"eventEntries",l)); else saveField(p.value,"eventEntries",l); };
   const evf=document.getElementById("evFilter"); if(evf) evf.onchange=()=>{ S.eventFilter=evf.value; render(true); };
 
+  // 日程調整
+  $$("[data-sched-start]",app).forEach(b=>b.onclick=()=>startSched(b.dataset.schedStart));
+  $$("[data-sched-go]",app).forEach(b=>b.onclick=()=>{ S.tab="sched"; S.focusRow=b.dataset.schedGo; LS.set("arxcs_tab",S.tab); render(true); });
+  $$("[data-sched-for]",app).forEach(sel=>sel.onchange=()=>savePatch(sel.dataset.schedFor,{schedFor:sel.value}));
+  $$("[data-sched-clear]",app).forEach(b=>b.onclick=()=>{ if(b.dataset.confirm!=="1"){ b.dataset.confirm="1"; b.textContent="本当に解除？"; return; } savePatch(b.dataset.schedClear,{schedStatus:""}); });
+  $$("[data-sched-done]",app).forEach(b=>b.onclick=()=>{ const id=b.dataset.schedDone, c=S.candidates.find(x=>x.id===id); if(!c) return;
+    if(c.schedFor==="other"){ savePatch(id,{schedStatus:"", schedDoneAt:todayStr()}); toast("調整完了にしました"); return; }
+    const inp=app.querySelector(`[data-sched-date="${id}"]`); if(!inp||!inp.value){ if(inp) inp.focus(); toast("決まった日付を入れてください"); return; }
+    saveField(id, c.schedFor, inp.value); toast(`${schedLabel(c.schedFor)}を ${md(inp.value)} で確定しました`); });
+  const sab2=document.getElementById("schedAddBtn"); if(sab2) sab2.onclick=()=>{ const p=document.getElementById("schedPerson"); if(!p.value){ p.focus(); return; } startSched(p.value, document.getElementById("schedFor").value, document.getElementById("schedNoteNew").value.trim()); };
+
   // 担当リスト・全体リスト
   $$("select[data-ov]",app).forEach(s=>s.onchange=()=>{ S[s.dataset.ovKey]={...S[s.dataset.ovKey],[s.dataset.ov]:s.value}; S.ovLimit=200; render(true); });
   $$("[data-ov-q]",app).forEach(q=>{ const k=q.dataset.ovQ; let t=null, composing=false;
@@ -1157,7 +1269,8 @@ function bindApp(){
   $$("[data-ov-clear]",app).forEach(b=>b.onclick=()=>{ S[b.dataset.ovClear]=freshOv(); S.ovLimit=200; render(true); });
   $$("[data-ov-more]",app).forEach(b=>b.onclick=()=>{ S.ovLimit+=200; render(true); });
   $$("[data-goto]",app).forEach(el=>{ const go=()=>{ const c=S.candidates.find(x=>x.id===el.dataset.goto); if(!c) return;
-      if(computeStage(c)==="lead"||el.dataset.gotoTab==="lead"||!isIaa(c)){ S.tab="lead"; S.leadQuery=fullName(c)||c.accountName||""; } else { S.tab="mtg"; S.focusRow=c.id; }
+      if(el.dataset.gotoTab==="sched"){ S.tab="sched"; S.focusRow=c.id; }
+      else if(computeStage(c)==="lead"||el.dataset.gotoTab==="lead"||!isIaa(c)){ S.tab="lead"; S.leadQuery=fullName(c)||c.accountName||""; } else { S.tab="mtg"; S.focusRow=c.id; }
       LS.set("arxcs_tab",S.tab); render(true); };
     el.onclick=go; el.onkeydown=e=>{ if(e.key==="Enter"){ e.preventDefault(); go(); } }; });
 
