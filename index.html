@@ -300,6 +300,8 @@ const YEAR_OPTIONS = [2024,2025,2026,2027,2028,2029,2030];
 const APO_MAX = 15;
 // 個人シートにログインしたまま「管理」も使える担当者（管理画面の「メンバー」で変更できる。最初の値）
 const DEFAULT_ADMIN_MEMBERS = ["shiromizu","matsuoka"];
+// 管理画面を使える担当者（この2人だけ。データベースのルールでも同じ2人に制限している）
+const ADMIN_ALLOWED = ["shiromizu","matsuoka"];
 const TABS = [
   {id:"dash",label:"ダッシュボード"},{id:"apo",label:"アポ目標"},{id:"lead",label:"見込み顧客"},{id:"sched",label:"日程調整"},
   {id:"mtg",label:"IAA"},{id:"event",label:"イベント"},{id:"overview",label:"担当リスト"},{id:"all",label:"全体リスト"},{id:"admin",label:"管理",admin:true}
@@ -329,6 +331,8 @@ const S = {
   adminSection:"dash", adminDashWho:"", adminOvFilter: freshOv(),
   toast:null, deferRender:false
 };
+const PAGE=100;
+function moreRow(key, shown, total, cols){ return total>shown?`<tr><td colspan="${cols}" style="text-align:center;padding:10px"><button class="btn" data-more="${key}">さらに${Math.min(PAGE,total-shown)}件を表示（残り${total-shown}件）</button></td></tr>`:""; }
 function freshOv(){ return {grade:"",route:"",region:"",university:"",progress:"",member:"",q:""}; }
 function M(){ return S.masters || DEFAULT_MASTERS; }
 function activeMembers(){ return (S.members||[]).filter(m=>m.active!==false); }
@@ -551,9 +555,7 @@ function renderLogin(){
   return gateCard(`<div style="font-weight:900;font-size:15px;margin-bottom:6px">招待リンクから参加してください</div>
     <p class="note" style="margin:0">このGoogleアカウント（<b>${esc(S.email||"")}</b>）は、まだどの担当者のシートにもつながっていません。管理者から届いた招待リンクを開くか、管理者にこのメールアドレスを登録してもらってください。別のGoogleアカウントで登録した場合は、下のボタンからログインし直してください。</p>
     <div style="margin-top:10px"><button class="btn sm" id="signOutBtn">別のGoogleアカウントでログインする</button></div>
-    <details style="margin-top:16px"><summary class="note" style="cursor:pointer">管理者の方はこちら</summary>
-      <label class="lbl" for="setupKey" style="margin-top:10px">管理者パスワード</label><input class="inp" id="setupKey" type="password" autocomplete="off"/>
-      <div style="margin-top:10px"><button class="btn" id="setupBtn">管理者としてログイン</button></div></details>`);
+`);
 }
 async function becomeAdmin(key){
   try{ await S.db.doc("admins/"+S.uid).set({setupKey:key, at:new Date().toISOString()}); S.passwordAdmin=true; updateAdmin(); startData(); toast("管理者として登録しました"); render(true); }
@@ -668,8 +670,12 @@ function renderLead(){
   const pinned=S.pinned.map(id=>base.find(c=>c.id===id)).filter(Boolean);
   const list=[...pinned, ...applySort(base.filter(c=>!S.pinned.includes(c.id) && LEAD_FILTERS.every(([k])=>!f[k]||c[k]===f[k])), S.leadSort)];
   const isNew=c=>S.pinned.includes(c.id);
-  const ws=words(S.leadQuery); const hidden=c=>!isNew(c) && ws.length && !wordsMatch(ws, searchText(c));
-  const hit=list.filter(c=>!hidden(c)).length;
+  const ws=words(S.leadQuery);
+  const matched=list.filter(c=>isNew(c) || !ws.length || wordsMatch(ws, searchText(c)));
+  const hit=matched.length;
+  const lim=(S.limit&&S.limit.lead)||PAGE;
+  const view=matched.slice(0, lim);
+  const hidden=()=>false;
   const filters=LEAD_FILTERS.map(([k,l,master])=>{ const known=new Set(master()); const extra=[...new Set(base.map(c=>c[k]).filter(v=>v&&!known.has(v)))].sort((a,b)=>a.localeCompare(b,"ja"));
     return `<label class="filter">${l}<select data-lead-filter="${k}"><option value="">すべて</option>${[...master(),...extra].map(o=>`<option value="${esc(o)}"${o===f[k]?" selected":""}>${esc(o)}</option>`).join("")}</select></label>`; }).join("");
   const anyF=LEAD_FILTERS.some(([k])=>f[k]);
@@ -677,7 +683,7 @@ function renderLead(){
   const STAGE={lead:"見込み",interview:"IAA",event:"イベント"};
   let main;
   if(S.leadView==="card"){
-    main = (S.canWrite?`<button class="add-row-btn" id="addRowBtn" style="margin-bottom:10px">＋ カードを追加</button>`:"") + (list.length ? `<div class="cards">${list.map(c=>`<div class="lcard${info[c.id]?" dup":""}${isNew(c)?" new-row":""}" data-search="${esc(searchText(c))}"${hidden(c)?' style="display:none"':""}>
+    main = (S.canWrite?`<button class="add-row-btn" id="addRowBtn" style="margin-bottom:10px">＋ カードを追加</button>`:"") + (view.length ? `<div class="cards">${view.map(c=>`<div class="lcard${info[c.id]?" dup":""}${isNew(c)?" new-row":""}" data-search="${esc(searchText(c))}"${hidden(c)?' style="display:none"':""}>
       <div class="lcard-head"><div><div class="lcard-name">${esc(nameOf(c)||"（名前未入力）")}</div><div class="lcard-furi">${esc(fullFuri(c))}</div></div><span class="stage-badge stage-${computeStage(c)}">${STAGE[computeStage(c)]}</span></div>
       <div data-dupcell="${c.id}">${dupBadge(info,c.id)}</div>
       <label class="cf"><span>氏名（姓と名はスペースで区切る）</span>${cell(c.id,"name",fullName(c),"text","")}</label>
@@ -690,10 +696,10 @@ function renderLead(){
       <div class="lcard-grid" style="grid-template-columns:1fr">
         <label class="cf"><span>Instagramアカウント</span>${linkCell(c.id,"instagram",c.instagram,"insta","@ユーザー名 / URL")}</label>
       </div>
-      <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center">${schedChip(c)}${delCell(c)}</div></div>`).join("")}</div>`
+      <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center">${schedChip(c)}${delCell(c)}</div></div>`).join("")}</div>${matched.length>view.length?`<div style="text-align:center;margin-top:12px"><button class="btn" data-more="lead">さらに${Math.min(PAGE,matched.length-view.length)}件を表示（残り${matched.length-view.length}件）</button></div>`:""}`
       : `<div class="dempty">見込み顧客はまだいません。「＋ カードを追加」から登録できます。</div>`);
   } else {
-    const rows=list.map((c,i)=>`<tr class="${info[c.id]?"dup-row":""}${isNew(c)?" new-row":""}" data-search="${esc(searchText(c))}"${hidden(c)?' style="display:none"':""}>
+    const rows=view.map((c,i)=>`<tr class="${info[c.id]?"dup-row":""}${isNew(c)?" new-row":""}" data-search="${esc(searchText(c))}"${hidden(c)?' style="display:none"':""}>
       <td class="num stk0">${isNew(c)?"新":i+1-pinned.length}</td><td class="stk1">${cell(c.id,"name",fullName(c),"text","w-name")}</td><td>${cell(c.id,"furigana",fullFuri(c),"text","w-name")}</td>
       <td>${cell(c.id,"university",c.university,"text","w-uni","uniList")}</td><td>${cell(c.id,"gradYear",c.gradYear,"text","w-s","gyList")}</td>
       <td>${cell(c.id,"club",c.club,"text","w-s","clubList")}</td><td>${cell(c.id,"route",c.route,"text","w-s","routeList")}</td>
@@ -701,10 +707,10 @@ function renderLead(){
       <td>${cell(c.id,"memo",c.memo,"text","w-memo")}</td>
       <td>${linkCell(c.id,"instagram",c.instagram,"insta","@ユーザー名 / URL")}</td>
       <td>${schedChip(c)}</td><td data-dupcell="${c.id}">${dupBadge(info,c.id)}</td><td style="text-align:center">${delCell(c)}</td></tr>`).join("");
-    const noHit=`<tr id="noHit" class="empty-row"${ws.length&&list.length&&!hit?"":' style="display:none"'}><td colspan="15">検索条件に一致する見込み顧客がいません。</td></tr>`;
+    const noHit=(ws.length&&list.length&&!hit)?`<tr class="empty-row"><td colspan="15">検索条件に一致する見込み顧客がいません。</td></tr>`:"";
     const empty=!list.length ? `<tr class="empty-row"><td colspan="15">見込み顧客はまだいません。「＋ 行を追加」から登録できます。</td></tr>` : "";
     const addRow=S.canWrite ? `<tr><td colspan="15"><button class="add-row-btn" id="addRowBtn">＋ 行を追加</button></td></tr>` : "";
-    main=`<div class="scrollx lead-table"><table class="t iaa-t"><tr>${["No","氏名","ふりがな","大学","学年","部活","ルート","アカウント名","IAA","イベント","メモ","Instagram","日程","重複","削除"].map((h,i)=>`<th${i===0?' class="stk0"':i===1?' class="stk1"':""}>${h}</th>`).join("")}</tr>${addRow}${rows}${noHit}${empty}</table></div>`;
+    main=`<div class="scrollx lead-table"><table class="t iaa-t"><tr>${["No","氏名","ふりがな","大学","学年","部活","ルート","アカウント名","IAA","イベント","メモ","Instagram","日程","重複","削除"].map((h,i)=>`<th${i===0?' class="stk0"':i===1?' class="stk1"':""}>${h}</th>`).join("")}</tr>${addRow}${rows}${moreRow("lead",view.length,matched.length,15)}${noHit}${empty}</table></div>`;
   }
   return datalist("uniList",uniNames())+datalist("gyList",M().gradYears)+datalist("clubList",M().clubs)+datalist("routeList",M().routes)+
     `<div class="toolbar"><input id="leadSearch" class="search" value="${esc(S.leadQuery)}" placeholder="フリーワード検索（名前・大学・部活・ルート・メモなど）"/><span class="count" id="leadCount">${ws.length?`${hit}件ヒット / 全${list.length}件`:`全${list.length}件`}</span></div>
@@ -797,6 +803,19 @@ function applyQ(app, key){
   const cnt=app.querySelector(`[data-qcount="${key}"]`); if(cnt) cnt.textContent=ws.length?`${hit}件ヒット / 全${rows.length}件`:`全${rows.length}件`;
   const nh=app.querySelector(`[data-qnohit="${key}"]`); if(nh) nh.style.display=ws.length&&rows.length&&!hit?"":"none";
 }
+// 件数の多い画面用：入力が止まったら描き直して絞り込む（日本語変換中は待つ）
+function qBoxR(key, hit, total){
+  const ws=words(S.q[key]);
+  return `<div class="qbar"><input class="search" data-qboxr="${key}" value="${esc(S.q[key]||"")}" placeholder="検索（名前・大学・部活・メモなど）"/><span class="count">${ws.length?`${hit}件ヒット / 全${total}件`:`全${total}件`}</span></div>`;
+}
+function bindLiveSearch(inp, apply){
+  let t=null, comp=false;
+  const run=()=>{ clearTimeout(t); apply(inp.value); render(true); };
+  inp.addEventListener("compositionstart",()=>{ comp=true; });
+  inp.addEventListener("compositionend",()=>{ comp=false; clearTimeout(t); t=setTimeout(run,250); });
+  inp.addEventListener("input",e=>{ if(comp||e.isComposing) return; clearTimeout(t); t=setTimeout(run,250); });
+  inp.addEventListener("keydown",e=>{ if(e.key==="Enter"&&!e.isComposing){ e.preventDefault(); run(); } if(e.key==="Escape"){ inp.value=""; run(); } });
+}
 const qNoHit=(key,cols)=>`<tr class="empty-row" data-qnohit="${key}" style="display:none"><td colspan="${cols}">検索に一致する人がいません。</td></tr>`;
 
 /* ================== 画面：日程調整 ================== */
@@ -833,13 +852,13 @@ function renderSched(){
 const STEP_LIST_FIELDS=["interview1","interview2","interview3","a2","dml","proposal","proposalDate","participationDate","enrolled"];
 function renderMtgList(list){
   const rows=list.map((c,i)=>{ const st=computeStatus(c);
-    return `<tr class="row-${esc(st)}" data-row="${c.id}"${qAttr("iaa",c)}><td class="num stk0">${i+1}</td><td class="stk1">${profileLine(c)}</td><td>${progressLine(c,st)}</td>
+    return `<tr class="row-${esc(st)}" data-row="${c.id}"><td class="num stk0">${i+1}</td><td class="stk1">${profileLine(c)}</td><td>${progressLine(c,st)}</td>
       ${STEP_LIST_FIELDS.map(f=>`<td class="step-cell${c[f]?" filled":""}" style="--c:var(--s-${f})">${f==="proposal"?cell(c.id,f,c[f],"text","w-s","propList"):cell(c.id,f,c[f],"date")}</td>`).join("")}
       <td class="declined-cell">${cell(c.id,"declined",c.declined,"date")}</td>
       <td>${cell(c.id,"memo",c.memo,"text","w-memo")}</td><td>${linkCell(c.id,"magazineUrl",c.magazineUrl,"url")}</td><td>${linkCell(c.id,"minutes",c.minutes,"url")}</td></tr>`; }).join("")
     || `<tr class="empty-row"><td colspan="16">面談中の候補者はいません。見込み顧客の「IAA」列に面談1回目の日付を入れると、ここに表示されます。</td></tr>`;
   const H=["No","名前","進捗",...STEP_LIST_FIELDS.map(f=>STEP_BY[f].label),"⑦見送り","メモ","マガジン原稿","議事録"];
-  return `<div class="scrollx"><table class="t iaa-t"><tr>${H.map((h,i)=>{ const f=STEP_LIST_FIELDS[i-3]; const cls=[i===0?"stk0":"",i===1?"stk1":"",f?"step-th":""].filter(Boolean).join(" "); return `<th${cls?` class="${cls}"`:""}${f?` style="--c:var(--s-${f})"`:""}>${h}</th>`; }).join("")}</tr>${rows}${qNoHit("iaa",16)}</table></div>`;
+  return `<div class="scrollx"><table class="t iaa-t"><tr>${H.map((h,i)=>{ const f=STEP_LIST_FIELDS[i-3]; const cls=[i===0?"stk0":"",i===1?"stk1":"",f?"step-th":""].filter(Boolean).join(" "); return `<th${cls?` class="${cls}"`:""}${f?` style="--c:var(--s-${f})"`:""}>${h}</th>`; }).join("")}</tr>${rows}${S.iaaMore||""}</table></div>`;
 }
 function optionalInterviews(c){ const o=[]; if(c.interview1&&!c.interview2) o.push("interview2"); if(c.interview2&&!c.interview3) o.push("interview3"); return o; }
 function nextMainField(c){ let l=-1; MAIN_FLOW.forEach((f,i)=>{ if(c[f]) l=i; }); return MAIN_FLOW[l+1]||null; }
@@ -870,16 +889,19 @@ function renderHistory(c){
 }
 function renderMtgStep(list){
   const rows=list.map((c,i)=>{ const st=computeStatus(c);
-    return `<tr class="row-${esc(st)}" data-row="${c.id}"${qAttr("iaa",c)}><td class="num stk0">${i+1}</td><td class="stk1">${profileLine(c)}</td><td>${progressLine(c,st)}</td>
+    return `<tr class="row-${esc(st)}" data-row="${c.id}"><td class="num stk0">${i+1}</td><td class="stk1">${profileLine(c)}</td><td>${progressLine(c,st)}</td>
     <td style="min-width:420px">${renderNA(c)}<div class="na-history">${renderHistory(c)}</div></td>
     <td class="declined-cell">${cell(c.id,"declined",c.declined,"date")}</td>
     <td>${cell(c.id,"memo",c.memo,"text","w-memo")}</td><td>${linkCell(c.id,"magazineUrl",c.magazineUrl,"url")}</td><td>${linkCell(c.id,"minutes",c.minutes,"url")}</td></tr>`; }).join("")
     || `<tr class="empty-row"><td colspan="8">面談中の候補者はいません</td></tr>`;
-  return `<div class="scrollx"><table class="t iaa-t"><tr>${["No","名前","進捗","ネクストアクション","⑦見送り","メモ","マガジン原稿","議事録"].map((h,i)=>`<th${i===0?' class="stk0"':i===1?' class="stk1"':""}>${h}</th>`).join("")}</tr>${rows}${qNoHit("iaa",8)}</table></div>`;
+  return `<div class="scrollx"><table class="t iaa-t"><tr>${["No","名前","進捗","ネクストアクション","⑦見送り","メモ","マガジン原稿","議事録"].map((h,i)=>`<th${i===0?' class="stk0"':i===1?' class="stk1"':""}>${h}</th>`).join("")}</tr>${rows}${S.iaaMore||""}</table></div>`;
 }
 function renderMtg(){
-  const list=applySort(mine().filter(isIaa), S.iaaSort);
-  return datalist("propList",M().proposals)+qBox("iaa",list.length)+
+  const all=applySort(mine().filter(isIaa), S.iaaSort);
+  const ws=words(S.q.iaa); const matched=ws.length?all.filter(c=>wordsMatch(ws,qText(c))):all;
+  const list=matched.slice(0,(S.limit&&S.limit.iaa)||PAGE);
+  S.iaaMore=moreRow("iaa",list.length,matched.length,16);
+  return datalist("propList",M().proposals)+qBoxR("iaa",matched.length,all.length)+
     `<div class="toolbar"><div class="seg"><button data-iaa-mode="list" class="${S.iaaMode==="list"?"active":""}" title="面談1回目〜⑥入会の列に日付を直接入力">一覧入力</button><button data-iaa-mode="step" class="${S.iaaMode==="step"?"active":""}" title="次のステップに日付を打って確定すると次へ進む">ステップ入力</button></div>
     <div class="grow"></div>${sortBar(S.iaaSort,[["name","名前"],["interview1","面談日"],["gradYear","年卒"],["status","ステータス"]],"data-iaa-sort")}</div>`+
     (S.iaaMode==="step"?renderMtgStep(list):renderMtgList(list));
@@ -1070,9 +1092,9 @@ function renderAdmin(){
   else if(sec==="members"){
     const ms=(S.members||[]).slice().sort((a,b)=>(a.order??0)-(b.order??0));
     body=`<div class="admin-grid"><section class="dcard"><h3>メンバー一覧</h3>${ms.map(m=>{ const n=S.candidates.filter(c=>c.ownerUid===m.id).length;
-      return `<div class="mrow"><input class="inp" data-mem-name="${esc(m.id)}" value="${esc(m.name)}"/><label class="note" style="white-space:nowrap"><input type="checkbox" data-mem-active="${esc(m.id)}"${m.active!==false?" checked":""}/> ログイン一覧に表示</label><label class="note" style="white-space:nowrap"><input type="checkbox" data-mem-admin="${esc(m.id)}"${(S.roles||[]).includes(m.id)?" checked":""}/> 管理者</label><span class="note" style="white-space:nowrap">${n}件</span></div>`; }).join("")||'<div class="note">まだいません</div>'}
+      return `<div class="mrow"><input class="inp" data-mem-name="${esc(m.id)}" value="${esc(m.name)}"/><label class="note" style="white-space:nowrap"><input type="checkbox" data-mem-active="${esc(m.id)}"${m.active!==false?" checked":""}/> ログイン一覧に表示</label>${ADMIN_ALLOWED.includes(m.id)?`<span class="badge" style="background:#e8eeff;color:#2f5bea">管理者</span>`:`<span></span>`}<span class="note" style="white-space:nowrap">${n}件</span></div>`; }).join("")||'<div class="note">まだいません</div>'}
       <div class="mrow" style="margin-top:12px"><input class="inp" id="newMemberName" placeholder="新しいメンバーの名前"/><button class="btn primary" id="addMemberBtn">追加</button><span></span></div>
-      <p class="note">名前を変えると、ログイン画面と一覧の表示が変わります。辞めた人は「ログイン一覧に表示」を外してください（担当していた案件のデータは残ります）。<br>「管理者」にチェックを入れた担当者は、自分のシートにログインしたまま「管理」タブを使えます。</p></section></div>`;
+      <p class="note">名前を変えると、ログイン画面と一覧の表示が変わります。辞めた人は「ログイン一覧に表示」を外してください（担当していた案件のデータは残ります）。<br>「管理」タブを使えるのは、白水 聖也さん・松岡 優斗さんの2人だけです。</p></section></div>`;
   }
   else if(sec==="masters"){
     const m=M(), ta=(k,l,v,hint)=>`<section class="dcard"><h3>${l}</h3><textarea class="inp" data-master="${k}">${esc(v)}</textarea><p class="note">${hint||"1行に1つずつ入力します。"}</p></section>`;
@@ -1181,7 +1203,7 @@ function renderBody(){
 }
 function captureFocus(){
   const a=document.activeElement; if(!a || a===document.body || !document.getElementById("app").contains(a)) return null;
-  const attrs=["data-id","data-field","data-draft","id","data-na-input","data-ov-q","data-mem-name","data-master","data-alert","data-qbox"];
+  const attrs=["data-id","data-field","data-draft","id","data-na-input","data-ov-q","data-mem-name","data-master","data-alert","data-qbox","data-qboxr"];
   const sel=attrs.filter(k=>a.hasAttribute(k)).map(k=>`[${k}="${CSS.escape(a.getAttribute(k))}"]`).join("");
   if(!sel) return null;
   let s=null,e=null; try{ s=a.selectionStart; e=a.selectionEnd; }catch(x){}
@@ -1267,7 +1289,7 @@ function bindApp(){
   const bs=document.getElementById("backToSelf");
   if(bs) bs.onclick=()=>{ S.actingAs=null; S.me=S.account?S.account.memberId:null; S.tab="admin"; render(true); };
   const nb=document.getElementById("navMenuBtn"); if(nb) nb.onclick=()=>{ S.navOpen=!S.navOpen; render(true); };
-  $$("[data-tab]",app).forEach(b=>b.onclick=()=>{ if(S.tab==="lead" && b.dataset.tab!=="lead") cleanupBlankRows(); S.tab=b.dataset.tab; LS.set("arxcs_tab",S.tab); S.navOpen=false; render(true); });
+  $$("[data-tab]",app).forEach(b=>b.onclick=()=>{ if(S.tab==="lead" && b.dataset.tab!=="lead") cleanupBlankRows(); if(S.tab!==b.dataset.tab) S.limit={}; S.tab=b.dataset.tab; LS.set("arxcs_tab",S.tab); S.navOpen=false; render(true); });
 
   // セル編集（確定時に保存）
   $$("input[data-id],select[data-id]",app).forEach(el=>{ el.onchange=()=>saveField(el.dataset.id, el.dataset.field, el.value.trim()); });
@@ -1287,10 +1309,7 @@ function bindApp(){
 
   // 見込み顧客
   const ls=document.getElementById("leadSearch");
-  if(ls) ls.addEventListener("input",()=>{ S.leadQuery=ls.value; const ws=words(S.leadQuery); const items=$$("[data-search]",app); let hit=0;
-    items.forEach(el=>{ const ok=el.classList.contains("new-row")||!ws.length||wordsMatch(ws,el.dataset.search); if(ok) hit++; el.style.display=ok?"":"none"; });
-    const cnt=document.getElementById("leadCount"); if(cnt) cnt.textContent=ws.length?`${hit}件ヒット / 全${items.length}件`:`全${items.length}件`;
-    const nh=document.getElementById("noHit"); if(nh) nh.style.display=ws.length&&items.length&&!hit?"":"none"; });
+  if(ls) bindLiveSearch(ls, v=>{ S.leadQuery=v; S.limit={...(S.limit||{}),lead:PAGE}; });
   $$("[data-lead-filter]",app).forEach(s=>s.onchange=()=>{ S.leadFilter={...S.leadFilter,[s.dataset.leadFilter]:s.value}; render(true); });
   $$("[data-lead-filter-clear]",app).forEach(b=>b.onclick=()=>{ S.leadFilter={}; render(true); });
   $$("[data-lead-sort]",app).forEach(b=>b.onclick=()=>{ S.leadSort=toggleSort(S.leadSort,b.dataset.leadSort); render(true); });
@@ -1350,6 +1369,8 @@ function bindApp(){
     saveField(id, c.schedFor, inp.value); toast(`${schedLabel(c.schedFor)}を ${md(inp.value)} で確定しました`); });
   const sab2=document.getElementById("schedAddBtn"); if(sab2) sab2.onclick=()=>{ const p=document.getElementById("schedPerson"); if(!p.value){ p.focus(); return; } startSched(p.value, document.getElementById("schedFor").value, document.getElementById("schedNoteNew").value.trim()); };
 
+  $$("[data-qboxr]",app).forEach(inp=>{ const k=inp.dataset.qboxr; bindLiveSearch(inp, v=>{ S.q[k]=v; S.limit={...(S.limit||{}),[k]:PAGE}; }); });
+  $$("[data-more]",app).forEach(b=>b.onclick=()=>{ const k=b.dataset.more; S.limit={...(S.limit||{}),[k]:((S.limit&&S.limit[k])||PAGE)+PAGE}; render(true); });
   $$("[data-qbox]",app).forEach(inp=>{ const k=inp.dataset.qbox; applyQ(app,k); inp.addEventListener("input",()=>{ S.q[k]=inp.value; applyQ(app,k); }); inp.addEventListener("keydown",e=>{ if(e.key==="Escape"){ inp.value=""; S.q[k]=""; applyQ(app,k); } }); });
   $$("[data-sched-member]",app).forEach(b=>b.onclick=()=>{ S.schedMember=b.dataset.schedMember; render(true); });
   // 担当リスト・全体リスト
@@ -1365,7 +1386,7 @@ function bindApp(){
   $$("[data-ov-more]",app).forEach(b=>b.onclick=()=>{ S.ovLimit+=200; render(true); });
   $$("[data-goto]",app).forEach(el=>{ const go=()=>{ const c=S.candidates.find(x=>x.id===el.dataset.goto); if(!c) return;
       if(el.dataset.gotoTab==="sched"){ S.tab="sched"; S.focusRow=c.id; }
-      else if(computeStage(c)==="lead"||el.dataset.gotoTab==="lead"||!isIaa(c)){ S.tab="lead"; S.leadQuery=fullName(c)||c.accountName||""; } else { S.tab="mtg"; S.focusRow=c.id; }
+      else if(computeStage(c)==="lead"||el.dataset.gotoTab==="lead"||!isIaa(c)){ S.tab="lead"; S.leadQuery=fullName(c)||c.accountName||""; } else { S.tab="mtg"; S.focusRow=c.id; S.limit={iaa:100000}; S.q.iaa=""; }
       LS.set("arxcs_tab",S.tab); render(true); };
     el.onclick=go; el.onkeydown=e=>{ if(e.key==="Enter"){ e.preventDefault(); go(); } }; });
 
@@ -1497,7 +1518,7 @@ function startAdminData(){
 }
 // 管理者かどうか：管理者パスワードで登録した人、または「管理者にする担当者」に入っている担当者のシートでログインしている人
 function updateAdmin(){
-  const roleAdmin = !!(S.account && Array.isArray(S.roles) && S.roles.includes(S.account.memberId));
+  const roleAdmin = !!(S.account && ADMIN_ALLOWED.includes(S.account.memberId) && (!Array.isArray(S.roles) || S.roles.includes(S.account.memberId)));
   S.isAdmin = !!(S.passwordAdmin || roleAdmin);
   if(S.isAdmin && dataStarted) startAdminData();
 }
