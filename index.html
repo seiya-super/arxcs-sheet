@@ -179,8 +179,9 @@ tr.row-⑥入会 td{background:#f4fbf6}tr.row-⑦見送り td{background:#f8f8f8
 /* リンク列・日程調整 */
 .lk{display:flex;align-items:center;gap:4px}
 .cell.w-link{min-width:130px;width:150px}
-.lk-go{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;background:var(--ink);color:#fff;text-decoration:none;font-size:12px;font-weight:900;flex:none}
+.lk-go{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;touch-action:manipulation;border-radius:6px;background:var(--ink);color:#fff;text-decoration:none;font-size:12px;font-weight:900;flex:none}
 .lk-go.off{background:#eceef2;color:#b0b4bb}
+.lk-go:not(.off):active{opacity:.7}
 .sched-chip{border:1px dashed var(--line);background:#fff;border-radius:999px;padding:3px 9px;font-size:10px;font-weight:700;color:var(--sub);white-space:nowrap}
 .sched-chip.on{border:1px solid #f5c26b;background:#fff4dc;color:#8a5a00}
 .tab-count{display:inline-block;margin-left:5px;min-width:18px;padding:0 5px;border-radius:999px;background:#f5a623;color:#fff;font-size:10px;line-height:18px;text-align:center}
@@ -443,15 +444,19 @@ function fieldPatch(cur, field, value){
 }
 // リンク列：URL、またはInstagramは「@ユーザー名」でも開けるようにする
 function linkHref(kind, v){
-  v=String(v||"").trim(); if(!v) return "";
-  if(/^https?:\/\//i.test(v)) return v;
-  if(kind==="insta"){ const h=v.replace(/^[@＠]+/,"").replace(/^(https?:\/\/)?(www\.)?instagram\.com\//i,"").split(/[/?#\s]/)[0]; return /^[A-Za-z0-9._]+$/.test(h)?"https://www.instagram.com/"+h+"/":""; }
-  if(/^[\w-]+(\.[\w-]+)+(\/\S*)?$/.test(v)) return "https://"+v;
+  v=String(v||"").trim().replace(/[​-‍﻿]/g,""); if(!v) return "";
+  // 文章ごと貼り付けた場合（例：「議事録はこちら https://…」）も、中のURLを取り出す
+  const m=v.match(/https?:\/\/[^\s"'<>、。「」（）()【】]+/i);
+  if(m) return m[0];
+  if(kind==="insta"){ const h=v.replace(/^[@＠]+/,"").replace(/^(www\.)?instagram\.com\//i,"").split(/[/?#\s]/)[0]; return /^[A-Za-z0-9._]+$/.test(h)?"https://www.instagram.com/"+h+"/":""; }
+  const d=v.match(/(?:^|\s)((?:[\w-]+\.)+[a-z]{2,}(?:\/[^\s、。「」]*)?)/i);
+  if(d) return "https://"+d[1];
   return "";
 }
+// リンク欄：入力欄＋「↗」。↗ は常にリンクとして置き、入力中の内容に合わせてその場で行き先を更新する（保存を待たない）
 function linkCell(id, field, value, kind, ph){
   const href=linkHref(kind,value);
-  return `<div class="lk"><input class="cell w-link" data-id="${id}" data-field="${field}" type="text" value="${esc(value)}" placeholder="${esc(ph||"URLを貼り付け")}"${S.canWrite?"":" readonly"}/>${href?`<a class="lk-go" href="${esc(href)}" target="_blank" rel="noopener" title="開く">↗</a>`:`<span class="lk-go off">↗</span>`}</div>`;
+  return `<div class="lk"><input class="cell w-link" data-id="${id}" data-field="${field}" data-lk-kind="${kind}" type="text" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" value="${esc(value)}" placeholder="${esc(ph||"URLを貼り付け")}"${S.canWrite?"":" readonly"}/><a class="lk-go${href?"":" off"}" data-lk-go href="${esc(href||"#")}" target="_blank" rel="noopener noreferrer" title="開く">↗</a></div>`;
 }
 // 複数の項目をまとめて保存（日程調整の開始・解除など）
 async function savePatch(id, patch){
@@ -1266,6 +1271,13 @@ function bindApp(){
 
   // セル編集（確定時に保存）
   $$("input[data-id],select[data-id]",app).forEach(el=>{ el.onchange=()=>saveField(el.dataset.id, el.dataset.field, el.value.trim()); });
+  // リンク欄：貼り付け・入力のたびに「↗」の行き先を更新する
+  $$("input[data-lk-kind]",app).forEach(el=>{ const go=el.parentElement.querySelector("[data-lk-go]"); const upd=()=>{ const h=linkHref(el.dataset.lkKind, el.value); go.href=h||"#"; go.classList.toggle("off",!h); };
+    el.addEventListener("input",upd); el.addEventListener("paste",()=>setTimeout(upd,0)); });
+  $$("[data-lk-go]",app).forEach(a=>a.addEventListener("click",e=>{ const inp=a.parentElement.querySelector("input[data-lk-kind]"); const h=inp?linkHref(inp.dataset.lkKind, inp.value):"";
+    if(!h){ e.preventDefault(); toast(inp&&inp.value.trim()?"リンクの形式が読み取れません。https:// から始まるURLを貼り付けてください":"先にURLを貼り付けてください",4000); return; }
+    if(a.getAttribute("href")!==h) a.setAttribute("href",h);
+    if(inp && inp.value.trim()!==String(S.candidates.find(c=>c.id===inp.dataset.id)?.[inp.dataset.field]||"").trim()) saveField(inp.dataset.id, inp.dataset.field, inp.value.trim()); }));
   // 保存済みの行・カードでも、氏名を打つとふりがなが連動する
   $$('input[data-field="name"][data-id]',app).forEach(nameEl=>{
     const box=nameEl.closest("tr,.lcard"); const furi=box&&box.querySelector(`input[data-field="furigana"][data-id="${nameEl.dataset.id}"]`);
