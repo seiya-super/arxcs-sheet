@@ -167,6 +167,8 @@ tr.row-⑥入会 td{background:#f4fbf6}tr.row-⑦見送り td{background:#f8f8f8
 .pl1{white-space:nowrap;display:flex;align-items:baseline;gap:6px}
 .pn{font-weight:900;font-size:13px}
 .pf{font-size:10px;color:var(--sub)}
+.pdup{margin-top:3px}.pdup .badge{font-size:9px;padding:1px 6px;min-width:0}
+.iaa-t tr.dup-row td.stk0,.iaa-t tr.dup-row td.stk1{background:#fff5f4}
 .pm{font-size:10px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
 .prog{display:flex;align-items:center;gap:6px;white-space:nowrap}
 @media (max-width:760px){ .pline{min-width:110px;max-width:130px} .pl1{flex-direction:column;align-items:flex-start;gap:0} .pf{display:none} }
@@ -851,8 +853,9 @@ function renderSched(){
 /* ================== 画面：IAA ================== */
 const STEP_LIST_FIELDS=["interview1","interview2","interview3","a2","dml","proposal","proposalDate","participationDate","enrolled"];
 function renderMtgList(list){
+  const info=dupInfo(S.candidates);
   const rows=list.map((c,i)=>{ const st=computeStatus(c);
-    return `<tr class="row-${esc(st)}" data-row="${c.id}"><td class="num stk0">${i+1}</td><td class="stk1">${profileLine(c)}</td><td>${progressLine(c,st)}</td>
+    return `<tr class="row-${esc(st)}${info[c.id]?" dup-row":""}" data-row="${c.id}"><td class="num stk0">${i+1}</td><td class="stk1">${profileLine(c)}${dupBadge(info,c.id)?`<div class="pdup">${dupBadge(info,c.id)}</div>`:""}</td><td>${progressLine(c,st)}</td>
       ${STEP_LIST_FIELDS.map(f=>`<td class="step-cell${c[f]?" filled":""}" style="--c:var(--s-${f})">${f==="proposal"?cell(c.id,f,c[f],"text","w-s","propList"):cell(c.id,f,c[f],"date")}</td>`).join("")}
       <td class="declined-cell">${cell(c.id,"declined",c.declined,"date")}</td>
       <td>${cell(c.id,"memo",c.memo,"text","w-memo")}</td><td>${linkCell(c.id,"magazineUrl",c.magazineUrl,"url")}</td><td>${linkCell(c.id,"minutes",c.minutes,"url")}</td></tr>`; }).join("")
@@ -888,8 +891,9 @@ function renderHistory(c){
   return done.map(s=>`<span class="na-chip" style="--c:var(--s-${s.field})"><b>${s.label}</b>${esc(md(c[s.field]))}</span>`).join(`<span class="na-arrow">›</span>`);
 }
 function renderMtgStep(list){
+  const info=dupInfo(S.candidates);
   const rows=list.map((c,i)=>{ const st=computeStatus(c);
-    return `<tr class="row-${esc(st)}" data-row="${c.id}"><td class="num stk0">${i+1}</td><td class="stk1">${profileLine(c)}</td><td>${progressLine(c,st)}</td>
+    return `<tr class="row-${esc(st)}${info[c.id]?" dup-row":""}" data-row="${c.id}"><td class="num stk0">${i+1}</td><td class="stk1">${profileLine(c)}${dupBadge(info,c.id)?`<div class="pdup">${dupBadge(info,c.id)}</div>`:""}</td><td>${progressLine(c,st)}</td>
     <td style="min-width:420px">${renderNA(c)}<div class="na-history">${renderHistory(c)}</div></td>
     <td class="declined-cell">${cell(c.id,"declined",c.declined,"date")}</td>
     <td>${cell(c.id,"memo",c.memo,"text","w-memo")}</td><td>${linkCell(c.id,"magazineUrl",c.magazineUrl,"url")}</td><td>${linkCell(c.id,"minutes",c.minutes,"url")}</td></tr>`; }).join("")
@@ -901,7 +905,9 @@ function renderMtg(){
   const ws=words(S.q.iaa); const matched=ws.length?all.filter(c=>wordsMatch(ws,qText(c))):all;
   const list=matched.slice(0,(S.limit&&S.limit.iaa)||PAGE);
   S.iaaMore=moreRow("iaa",list.length,matched.length,16);
-  return datalist("propList",M().proposals)+qBoxR("iaa",matched.length,all.length)+
+  const dinfo=dupInfo(S.candidates); const dups=all.filter(c=>dinfo[c.id]);
+  const dupStrip=dups.length?`<div class="alert-strip">⚠ 他の登録と重複しているIAAの人が${dups.length}人います：${dups.slice(0,12).map(c=>`<button data-iaa-dup="${esc(fullName(c)||c.accountName||"")}">${esc(nameOf(c))}（${esc(ownersLabel(dinfo[c.id].others.filter(o=>o.ownerUid!==S.me))||"自分")}）</button>`).join("")}${dups.length>12?`<span>ほか${dups.length-12}人</span>`:""}</div>`:"";
+  return datalist("propList",M().proposals)+qBoxR("iaa",matched.length,all.length)+dupStrip+
     `<div class="toolbar"><div class="seg"><button data-iaa-mode="list" class="${S.iaaMode==="list"?"active":""}" title="面談1回目〜⑥入会の列に日付を直接入力">一覧入力</button><button data-iaa-mode="step" class="${S.iaaMode==="step"?"active":""}" title="次のステップに日付を打って確定すると次へ進む">ステップ入力</button></div>
     <div class="grow"></div>${sortBar(S.iaaSort,[["name","名前"],["interview1","面談日"],["gradYear","年卒"],["status","ステータス"]],"data-iaa-sort")}</div>`+
     (S.iaaMode==="step"?renderMtgStep(list):renderMtgList(list));
@@ -1370,6 +1376,7 @@ function bindApp(){
   const sab2=document.getElementById("schedAddBtn"); if(sab2) sab2.onclick=()=>{ const p=document.getElementById("schedPerson"); if(!p.value){ p.focus(); return; } startSched(p.value, document.getElementById("schedFor").value, document.getElementById("schedNoteNew").value.trim()); };
 
   $$("[data-qboxr]",app).forEach(inp=>{ const k=inp.dataset.qboxr; bindLiveSearch(inp, v=>{ S.q[k]=v; S.limit={...(S.limit||{}),[k]:PAGE}; }); });
+  $$("[data-iaa-dup]",app).forEach(b=>b.onclick=()=>{ S.q.iaa=b.dataset.iaaDup; S.limit={...(S.limit||{}),iaa:PAGE}; render(true); });
   $$("[data-more]",app).forEach(b=>b.onclick=()=>{ const k=b.dataset.more; S.limit={...(S.limit||{}),[k]:((S.limit&&S.limit[k])||PAGE)+PAGE}; render(true); });
   $$("[data-qbox]",app).forEach(inp=>{ const k=inp.dataset.qbox; applyQ(app,k); inp.addEventListener("input",()=>{ S.q[k]=inp.value; applyQ(app,k); }); inp.addEventListener("keydown",e=>{ if(e.key==="Escape"){ inp.value=""; S.q[k]=""; applyQ(app,k); } }); });
   $$("[data-sched-member]",app).forEach(b=>b.onclick=()=>{ S.schedMember=b.dataset.schedMember; render(true); });
